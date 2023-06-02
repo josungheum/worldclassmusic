@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AdditionImageList">
+	
+	<select id="AdditionImageList_List" parameterType="qss.vo.AdditionImageListVo" resultType="qss.vo.AdditionImageListVo">
+		SELECT A.FILE_CONTENT_IDX, B.THUMBNAIL_PATH, A.ADDITION_TYPE
+		FROM 	ADDITION_IMAGELIST A
+			INNER JOIN FILE_CONTENT B ON A.FILE_CONTENT_IDX = B.FILE_CONTENT_IDX
+		WHERE	A.ADDITION_TYPE = #{additionType}
+				AND A.DOMAIN_IDX = #{domainIdx}
+				AND A.BRAND_IDX = #{brandIdx}
+		ORDER BY ORDER_SEQ
+	</select>
+	
+	<insert id="AdditionImageList_Create" parameterType="qss.vo.AdditionImageListVo">
+		INSERT INTO ADDITION_IMAGELIST (DOMAIN_IDX, BRAND_IDX, FILE_CONTENT_IDX, ADDITION_TYPE, ORDER_SEQ)
+		VALUES
+		<foreach item="item" index="index" collection="additionList" separator=" , ">
+			(#{item.domainIdx},#{item.brandIdx}, #{item.fileContentIdx}, #{item.additionType}, #{item.orderSeq})
+		</foreach>
+	</insert>
+	
+	<delete id="AdditionImageList_Delete" parameterType="string">
+		DELETE
+		FROM	ADDITION_IMAGELIST
+		WHERE	ADDITION_TYPE = (#{additionType})
+	</delete>
+</mapper>

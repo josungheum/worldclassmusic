@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SystemCode">
+
+	<select id="SystemCode_SystemCodeList" parameterType="qss.vo.SystemCodeVo" resultType="qss.vo.SystemCodeVo">
+	    /*
+		  ID  : SystemCode_sql.SystemCode_SystemCodeList
+		  DEC : 공통 코드 목록 조회
+		*/
+		<include refid="Common.BeforeSQL"/>
+		SELECT   (
+					SELECT CODE_NAME
+					FROM   SYSTEM_CODE
+					WHERE  CODE_VALUE = A.CODE_GROUP
+					AND    CODE_LEVEL = 0
+					AND    IFNULL(DEL_YN, 'N') = 'N'
+				) AS GROUP_NAME
+		       , CODE_VALUE
+		       , CODE_NAME
+		       , date_format(MOD_DATE, '%Y-%m-%d') AS MOD_DATE
+		       , MEMO
+		       , CODE_IDX
+		       , ACTIVE_YN
+		       , MOD_YN
+		       , ORDER_SEQ
+		FROM     SYSTEM_CODE A
+		WHERE    IFNULL(DEL_YN, 'N') = 'N'
+		AND      CODE_LEVEL = #{codeLevel}
+		<if test="sSearch != null and sSearch != ''">
+            AND CODE_NAME LIKE CONCAT('%',#{sSearch},'%')
+         </if>
+         <if test="codeGroup != null and codeGroup != ''">
+			AND CODE_GROUP = #{codeGroup}
+		 </if>
+		<include refid="Common.AfterSQL"/>
+	</select>
+
+	<select id="SystemCode_SystemCodeOverlap" parameterType="qss.vo.SystemCodeVo" resultType="int">
+		/*
+		  ID    : systemCode_sql.SystemCode_SystemCodeOverlap
+		  DEC   : 코드 중복체크
+		*/
+		SELECT  count(*)
+		FROM    SYSTEM_CODE
+		WHERE   ifnull(DEL_YN, 'N') = 'N'
+		AND     CODE_GROUP = #{codeGroup}
+		AND     CODE_VALUE = #{codeValue}
+		<!-- 수정시 필요 -->
+		<if test="codeIdx != null and codeIdx != '' and codeIdx != 0">
+			AND     CODE_IDX != #{codeIdx}
+		</if>
+	</select>
+
+	<select id="SystemCode_SystemCodeCount" parameterType="qss.vo.SystemCodeVo" resultType="int">
+	    /*
+		  ID  : systemCode_sql.SystemCode_SystemCodeCount
+		  DEC : 공통 코드 목록 카운터
+		*/
+		SELECT   COUNT(*)
+		FROM     SYSTEM_CODE
+		WHERE    IFNULL(DEL_YN, 'N') = 'N'
+		AND      CODE_LEVEL = #{codeLevel}
+		<if test="sSearch != null and sSearch != ''">
+            AND CODE_NAME LIKE CONCAT('%',#{sSearch},'%')
+        </if>
+         <if test="codeGroup != null and codeGroup != ''">
+			AND CODE_GROUP = #{codeGroup}
+		 </if>
+
+
+	</select>
+
+	<select id="SystemCode_SystemGroupCode" parameterType="qss.vo.SystemCodeVo" resultType="qss.vo.SystemCodeVo">
+	    /*
+		  ID  : systemCode_sql.SystemCode_SystemGroupCode
+		  DEC : 공통 코드 그룹 조회
+		*/
+		SELECT CONCAT(CODE_NAME,' [',CODE_VALUE,']') AS 'CODE_NAME'
+		     , CODE_VALUE
+		FROM   system_code
+		WHERE  CODE_LEVEL = 0
+		AND    IFNULL(DEL_YN, 'N') = 'N'
+		AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+	</select>
+
+	<select id="SystemCode_ListSystemCode" parameterType="qss.vo.SystemCodeVo" resultType="qss.vo.SystemCodeVo">
+	    /*
+		  ID  : systemCode_sql.SystemCode_ListSystemCode
+		  DEC : 공통 코드 조회
+		*/
+		SELECT CODE_NAME, CODE_VALUE
+		FROM   system_code
+		WHERE  CODE_LEVEL != 0
+		AND    CODE_GROUP = #{codeGroup}
+		AND    IFNULL(DEL_YN, 'N') = 'N'
+		AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+        ORDER BY ORDER_SEQ
+	</select>
+
+	<select id="SystemCode_GetSystemCode" parameterType="qss.vo.SystemCodeVo" resultType="qss.vo.SystemCodeVo">
+		/*
+		  ID  : systemCode_sql.SystemCode_GetSystemCode
+		  DEC : 공통 코드 상세 조회
+		*/
+		SELECT   CODE_GROUP
+		       , (SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_VALUE = A.CODE_GROUP AND IFNULL(DEL_YN, 'N') = 'N') AS GROUP_NAME
+		       , CODE_VALUE
+		       , CODE_NAME
+		       , ACTIVE_YN
+		       , date_format(MOD_DATE, '%Y-%m-%d') AS MOD_DATE
+		       , MEMO
+		       , CODE_IDX
+		       , MOD_YN
+		       , CODE_LEVEL
+		       , ORDER_SEQ
+		FROM     SYSTEM_CODE A
+		WHERE    1 = 1
+		<if test="codeIdx != null and codeIdx != '' and codeIdx != 0" >
+            AND CODE_IDX = #{codeIdx}
+        </if>
+	</select>
+
+	<insert id="SystemCode_SystemCodeCreate" parameterType="qss.vo.SystemCodeVo">
+		/*
+		  ID  : systemCode_sql.SystemCode_SystemCodeCreate
+		  DEC : 공통 코드 저장
+		*/
+		<selectKey keyProperty="codeIdx" resultType="biginteger" order="BEFORE">
+			SELECT IFNULL(MAX(CODE_IDX) + 1, '1')
+			FROM   SYSTEM_CODE
+		</selectKey>
+		INSERT INTO SYSTEM_CODE (
+		   CODE_IDX
+		  ,CODE_GROUP
+		  ,CODE_VALUE
+		  ,CODE_NAME
+		  ,CODE_LEVEL
+		  ,ORDER_SEQ
+		  ,REG_USER
+		  ,REG_DATE
+		  ,MOD_USER
+		  ,MOD_DATE
+		  ,MEMO
+		  ,ACTIVE_YN
+		  ,DEL_YN
+		  ,MOD_YN
+		) VALUES (
+		   #{codeIdx}
+		  ,#{codeGroup}
+		  ,#{codeValue}
+		  ,#{codeName}
+		  ,#{codeLevel}
+		  ,#{orderSeq}
+		  ,#{regUser}
+		  ,now()
+		  ,#{regUser}
+		  ,now()
+		  ,#{memo}
+		  ,#{activeYn}
+		  ,'N'
+		  ,'Y'
+		)
+	</insert>
+
+	<update id="SystemCode_SystemCodeUpdate" parameterType="qss.vo.SystemCodeVo">
+		/*
+		  ID  : systemCode_sql.SystemCode_SystemCodeUpdate
+		  DEC : 공통 코드 수정
+		*/
+		UPDATE SYSTEM_CODE SET
+		       CODE_GROUP = #{codeGroup}
+		      ,CODE_VALUE = #{codeValue}
+		      ,CODE_NAME = #{codeName}
+		  	  ,CODE_LEVEL = #{codeLevel}
+		  	  ,ORDER_SEQ = #{orderSeq}
+		  	  ,ACTIVE_YN = #{activeYn}
+		  	  ,MOD_USER = #{regUser}
+		  	  ,MOD_DATE = now()
+		  	  ,MEMO = #{memo}
+		WHERE  CODE_IDX = #{codeIdx}
+	</update>
+
+	<update id="SystemCode_SystemCodeActive" parameterType="qss.vo.SystemCodeVo">
+		/*
+		  ID  : systemCode_sql.SystemCode_SystemCodeActive
+		  DEC : 시스템 코드 활성화
+		*/
+		UPDATE SYSTEM_CODE
+		set    MOD_USER = #{regUser}
+		     , MOD_DATE = now()
+		     , ACTIVE_YN = #{activeYn}
+		WHERE  CODE_IDX = #{codeIdx}
+
+
+	</update>
+
+	<update id="SystemCode_SystemCodeDelete"  parameterType="qss.vo.SystemCodeVo" >
+		/*
+		  ID  : systemCode_sql.SystemCode_SystemCodeDelete
+		  DEC : 시스템 코드 삭제
+		*/
+		UPDATE SYSTEM_CODE
+		SET    DEL_YN = 'Y'
+		     , MOD_USER = #{regUser}
+		     , MOD_DATE = now()
+		WHERE  CODE_IDX  IN
+		<foreach collection="checkboxArr" item="id" open="(" close=")" separator=",">
+	        #{id}
+	    </foreach>
+	</update>
+
+
+
+</mapper>

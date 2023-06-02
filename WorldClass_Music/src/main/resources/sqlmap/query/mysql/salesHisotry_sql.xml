@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SalesHistory">
+	<resultMap type="qss.vo.SalesHistoryVo" id="SalesHistoryVo" />
+	<resultMap type="qss.vo.OrderItemVo" id="OrderItemVo" />
+
+
+	<select id="SalesHistory_List" parameterType="qss.vo.SalesHistoryVo" resultType="qss.vo.SalesHistoryVo">
+	/*
+	ID : salesHisotry_sql.SalesHistory_List
+	DEC : 매출내역 리스트 조회
+	*/
+	SELECT  A.DOMAIN_IDX		/*도메인일련번호*/
+			,A.BRAND_IDX		/*브랜드일련번호*/
+			,A.FRANC_IDX		/*가맹점일련번호*/
+			,A.ORDER_MASTER_IDX	/*주문마스터 일련번호*/
+			,A.DEVICE_IDX		/*단말일련번호*/
+			,A.DEVICE_NAME /*단말명*/
+			,
+			CASE
+				WHEN A.DEL_YN = 'Y'
+				THEN CONCAT('(삭제단말)', A.DEVICE_NAME)
+				ELSE A.DEVICE_NAME
+			END AS DEVICE_NAME /*단말명*/
+			,A.RECEIPT_NO		/*영수번호*/
+			,A.ORDER_DATE
+			,ifnull(A.ORDER_TIME, '0000') AS ORDER_TIME		/*주문시간*/
+			,A.ORDER_AMT		/*구매액*/
+			,A.DISC_AMT		/*할인액*/
+			,A.PAY_AMT		/*결제액*/
+			,A.CARD_AMT		/*카드결제액*/
+			,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'PAY0000' AND CODE_VALUE = A.PAY_TYPE AND IFNULL(DEL_YN, 'N') = 'N') AS  PAY_TYPE /*결제종류*/
+			,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'ORD0000' AND CODE_VALUE = A.PAY_PROC_CODE AND IFNULL(DEL_YN, 'N') = 'N') AS  PAY_PROC_CODE /*결제진행코드*/
+			,A.POINT_TYPE_CODE	/*포인트구분코드*/
+			,A.POINT_USE_AMT		/*포인트사용금액*/
+			,A.POINT_SAVE_AMT		/*포인트적립금액*/
+			,A.CALCULATE_YN		/*정산여부*/
+			,A.REG_USER		/*등록자*/
+			,date_format(A.REG_DATE, '%Y%m%d %H:%i:%s') AS REG_DATE		/*등록일*/
+			,A.MOD_USER		/*수정자*/
+       	  	,date_format(A.MOD_DATE, '%Y-%m-%d') AS MOD_DATE
+			,#{searchDay} AS searchDay           /*조회조건 시작일*/
+			,#{searchEndDay} AS searchEndDay     /*조회조건 종료일*/
+		FROM
+		(
+			SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+					,OM.BRAND_IDX		/*브랜드일련번호*/
+					,OM.FRANC_IDX		/*가맹점일련번호*/
+					,OM.ORDER_MASTER_IDX	/*주문마스터 일련번호*/
+					,OM.DEVICE_IDX		/*단말일련번호*/
+					,KS.DEL_YN
+					,KS.DEVICE_NAME
+					,OM.RECEIPT_NO		/*영수번호*/
+					,DATE_FORMAT(STR_TO_DATE(CONCAT(OM.ORDER_DATE, OM.ORDER_TIME), '%Y%m%d%H%i'),'%Y-%m-%d %H:%i') AS ORDER_DATE   /*주문 시간*/
+					,OM.ORDER_TIME		/*주문시간*/
+					,OM.ORDER_AMT		/*구매액*/
+					,OM.DISC_AMT		/*할인액*/
+					,OM.PAY_AMT		/*결제액*/
+					,OM.CARD_AMT		/*카드결제액*/
+					,OM.PAY_TYPE /*결제종류*/
+					,OM.PAY_PROC_CODE /*결제진행코드*/
+					,OM.POINT_TYPE_CODE	/*포인트구분코드*/
+					,OM.POINT_USE_AMT		/*포인트사용금액*/
+					,OM.POINT_SAVE_AMT		/*포인트적립금액*/
+					,OM.CALCULATE_YN		/*정산여부*/
+					,OM.REG_USER		/*등록자*/
+					,OM.REG_DATE
+					,OM.MOD_USER		/*수정자*/
+         	  		,OM.MOD_DATE
+			FROM ORDER_MASTER OM
+			INNER JOIN franchisee f ON  f.DOMAIN_IDX = OM.DOMAIN_IDX AND f.BRAND_IDX = OM.BRAND_IDX AND f.FRANC_IDX = OM.FRANC_IDX AND ifnull(f.DEL_YN, 'N') = 'N'
+      		INNER JOIN brand b ON  b.DOMAIN_IDX = OM.DOMAIN_IDX AND b.BRAND_IDX = OM.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+ 			LEFT OUTER JOIN KIOSK KS
+ 			ON OM.DOMAIN_IDX = KS.DOMAIN_IDX
+ 			AND OM.BRAND_IDX = KS.BRAND_IDX
+ 			AND OM.FRANC_IDX = KS.FRANC_IDX
+ 			AND OM.DEVICE_IDX = KS.DEVICE_IDX
+			WHERE OM.DOMAIN_IDX = #{domainIdx}
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+				<if test="brandIdx != null and brandIdx != '' and brandIdx != 0">
+					AND OM.BRAND_IDX = #{brandIdx}
+				</if>
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+					AND OM.FRANC_IDX = #{francIdx}
+				</if>
+			</if>
+
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+					AND OM.BRAND_IDX = #{sessionBrandIdx}
+				</if>
+
+				/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+					AND OM.BRAND_IDX = #{sessionBrandIdx}
+					AND OM.FRANC_IDX = #{sessionFrancIdx}
+				</if>
+			</if>
+
+			<if test="searchDay != null and searchDay != '' and searchEndDay != null and searchEndDay != ''">
+				AND DATE(OM.ORDER_DATE) BETWEEN #{searchDay} AND #{searchEndDay}
+			</if>
+
+			<if test="sSearch != null and sSearch != ''">
+				AND KS.DEVICE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			</if>
+			<if test="orderMasterIdx != null and orderMasterIdx != ''">
+				AND ORDER_MASTER_IDX = #{orderMasterIdx}
+			</if>
+
+			<if test="deviceIdx != null and deviceIdx != ''">
+				AND OM.DEVICE_IDX = #{deviceIdx}
+			</if>
+
+			<if test="payType != null and payType != ''">
+				AND OM.PAY_TYPE = #{payType}
+			</if>
+
+			<if test="payProcCode != null and payProcCode != ''">
+				AND OM.PAY_PROC_CODE = #{payProcCode}
+			</if>
+
+			<if test="sSortName == null or sSortName == ''">
+<!-- 				ORDER BY STR_TO_DATE(CONCAT(OM.ORDER_DATE, OM.ORDER_TIME), '%Y%m%d%H%i') desc -->
+			</if>
+		<include refid="Common.AfterSQL"/>
+	</select>
+
+	<select id="SalesHistory_ListCnt" parameterType="qss.vo.SalesHistoryVo" resultType="int">
+		/*
+		  ID  : salesHisotry_sql.SalesHistory_ListCnt
+		  DEC : 매출 Cnt 조회
+		*/
+			SELECT COUNT(OM.DOMAIN_IDX)
+			 FROM ORDER_MASTER OM
+			 	INNER JOIN franchisee f ON  f.DOMAIN_IDX = OM.DOMAIN_IDX AND f.BRAND_IDX = OM.BRAND_IDX AND f.FRANC_IDX = OM.FRANC_IDX AND ifnull(f.DEL_YN, 'N') = 'N'
+      			INNER JOIN brand b ON  b.DOMAIN_IDX = OM.DOMAIN_IDX AND b.BRAND_IDX = OM.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+			 	LEFT OUTER JOIN KIOSK KS ON OM.DOMAIN_IDX = KS.DOMAIN_IDX AND OM.BRAND_IDX = KS.BRAND_IDX AND OM.FRANC_IDX = KS.FRANC_IDX AND OM.DEVICE_IDX = KS.DEVICE_IDX
+			WHERE OM.DOMAIN_IDX = #{domainIdx}
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+				<if test="brandIdx != null and brandIdx != '' and brandIdx != 0">
+					AND OM.BRAND_IDX = #{brandIdx}
+				</if>
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+					AND OM.FRANC_IDX = #{francIdx}
+				</if>
+			</if>
+
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+					AND OM.BRAND_IDX = #{sessionBrandIdx}
+				</if>
+
+				/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+					AND OM.BRAND_IDX = #{sessionBrandIdx}
+					AND OM.FRANC_IDX = #{sessionFrancIdx}
+				</if>
+			</if>
+
+			<if test="searchDay != null and searchDay != '' and searchEndDay != null and searchEndDay != ''">
+				AND DATE(OM.ORDER_DATE) BETWEEN #{searchDay} AND #{searchEndDay}
+			</if>
+
+			<if test="sSearch != null and sSearch != ''">
+				AND KS.DEVICE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			</if>
+			<if test="orderMasterIdx != null and orderMasterIdx != ''">
+				AND ORDER_MASTER_IDX = #{orderMasterIdx}
+			</if>
+
+			<if test="deviceIdx != null and deviceIdx != ''">
+				AND OM.DEVICE_IDX = #{deviceIdx}
+			</if>
+
+			<if test="payType != null and payType != ''">
+				AND OM.PAY_TYPE = #{payType}
+			</if>
+
+			<if test="payProcCode != null and payProcCode != ''">
+				AND OM.PAY_PROC_CODE = #{payProcCode}
+			</if>
+         	<if test="sSortName == null or sSortName == ''">
+<!-- 				ORDER BY STR_TO_DATE(CONCAT(OM.ORDER_DATE, OM.ORDER_TIME), '%Y%m%d%H%i') desc -->
+			</if>
+	</select>
+
+
+	<select id="SalesHistory_Stat" parameterType="qss.vo.SalesHistoryVo" resultType="qss.vo.SalesHistoryVo">
+	/*
+	ID : salesHisotry_sql.SalesHistory_Stat
+	DEC : 매출내역 통계
+	*/
+			SELECT COUNT(OM.DOMAIN_IDX) ORDER_COUNT
+				      ,SUM(ORDER_AMT) AS ORDER_AMT
+				      ,SUM(DISC_AMT) AS DISC_AMT
+				      ,SUM(PAY_AMT) AS PAY_AMT
+				FROM ORDER_MASTER OM
+					INNER JOIN franchisee f ON  f.DOMAIN_IDX = OM.DOMAIN_IDX AND f.BRAND_IDX = OM.BRAND_IDX AND f.FRANC_IDX = OM.FRANC_IDX AND ifnull(f.DEL_YN, 'N') = 'N'
+      				INNER JOIN brand b ON  b.DOMAIN_IDX = OM.DOMAIN_IDX AND b.BRAND_IDX = OM.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+			 		LEFT OUTER JOIN KIOSK KS ON OM.DOMAIN_IDX = KS.DOMAIN_IDX AND OM.BRAND_IDX = KS.BRAND_IDX AND OM.FRANC_IDX = KS.FRANC_IDX AND OM.DEVICE_IDX = KS.DEVICE_IDX
+				WHERE OM.DOMAIN_IDX = #{domainIdx}
+				AND OM.PAY_PROC_CODE = 'ORD0002'
+
+			<!-- 시스템 관라지 일경우 -->
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+				<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+					AND OM.BRAND_IDX = #{brandIdx}
+				</if>
+				<if test="francIdx != null and francIdx != null and francIdx != 0">
+					AND OM.FRANC_IDX = #{francIdx}
+				</if>
+				<if test="searchDay != null and searchDay != '' and searchEndDay != null and searchEndDay != ''">
+					AND DATE(OM.ORDER_DATE) BETWEEN #{searchDay} AND #{searchEndDay}
+				</if>
+
+				<if test="sSearch != null and sSearch != ''">
+					AND KS.DEVICE_NAME LIKE CONCAT('%',#{sSearch},'%')
+				</if>
+
+				<if test="orderMasterIdx != null and orderMasterIdx != ''">
+					AND ORDER_MASTER_IDX = #{orderMasterIdx}
+				</if>
+
+				<if test="deviceIdx != null and deviceIdx != ''">
+					AND OM.DEVICE_IDX = #{deviceIdx}
+				</if>
+
+				<if test="payType != null and payType != ''">
+					AND OM.PAY_TYPE = #{payType}
+				</if>
+
+				GROUP BY OM.DOMAIN_IDX
+				<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+					,OM.BRAND_IDX
+				</if>
+				<if test="francIdx != null and francIdx != null and francIdx != 0">
+					,OM.FRANC_IDX
+				</if>
+
+
+			</if>
+			<!-- 시스템 관라지가  아닐경우 -->
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+				/* 브랜드 관리자는 해당 브랜드에 포함된 모든 매장 포함되게 또는 선택한 매자만 */
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+					AND OM.BRAND_IDX = #{sessionBrandIdx}
+				</if>
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+					AND OM.FRANC_IDX = #{francIdx}
+				</if>
+
+				/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+					AND OM.BRAND_IDX = #{sessionBrandIdx}
+					AND OM.FRANC_IDX = #{sessionFrancIdx}
+				</if>
+				<if test="searchDay != null and searchDay != '' and searchEndDay != null and searchEndDay != ''">
+					AND DATE(OM.ORDER_DATE) BETWEEN #{searchDay} AND #{searchEndDay}
+				</if>
+
+				<if test="sSearch != null and sSearch != ''">
+					AND KS.DEVICE_NAME LIKE CONCAT('%',#{sSearch},'%')
+				</if>
+
+				<if test="orderMasterIdx != null and orderMasterIdx != ''">
+					AND ORDER_MASTER_IDX = #{orderMasterIdx}
+				</if>
+
+				<if test="deviceIdx != null and deviceIdx != ''">
+					AND OM.DEVICE_IDX = #{deviceIdx}
+				</if>
+
+				<if test="payType != null and payType != ''">
+					AND OM.PAY_TYPE = #{payType}
+				</if>
+
+		        GROUP BY OM.DOMAIN_IDX
+		        <if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+					,OM.BRAND_IDX
+				</if>
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+					,OM.FRANC_IDX
+				</if>
+
+				/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+					,OM.BRAND_IDX
+					,OM.FRANC_IDX
+				</if>
+			</if>
+	</select>
+
+
+
+
+	<select id="SalesHistory_Detail"  parameterType="qss.vo.SalesHistoryVo" resultType="qss.vo.OrderItemVo">
+		/*
+		ID : salesHisotry_sql.SalesHistory_Detail
+		DEC : 매출내역 주문상품 리스트 조회
+		*/
+		SELECT
+				ORDER_MASTER_IDX    /*주문마스터 일련번호*/
+				,ORDER_ITEM_IDX    /*주문아이템 일련번호*/
+				,(SELECT PROD_DISPLAY_NAME FROM ORDER_PROD PRD WHERE PRD.DOMAIN_IDX = OI.DOMAIN_IDX AND PRD.BRAND_IDX = OI.BRAND_IDX AND PRD.FRANC_IDX = OI.FRANC_IDX AND PRD.ORDER_PROD_IDX = OI.ORDER_PROD_IDX) AS PROD_DISPLAY_NAME
+				,ORDER_PROD_IDX	  /*상품일련번호*/
+				,QUANTITY		  /*수량*/
+				,UNIT_PRICE		  /*가격*/
+				,ORDER_SEQ		  /*정렬순서*/
+				,REG_USER		/*등록자*/
+				,date_format(REG_DATE, '%Y-%m-%d') AS REG_DATE		/*등록일*/
+				,MOD_USER		/*수정자*/
+				,date_format(MOD_DATE, '%Y-%m-%d') AS MOD_DATE		/*등록일*/
+				FROM ORDER_ITEM OI
+			WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx}
+			AND ORDER_MASTER_IDX = #{orderMasterIdx} AND DEVICE_IDX = #{deviceIdx}
+
+	</select>
+
+
+	<select id="SalesHistory_ListExcel" parameterType="qss.vo.SalesHistoryVo" resultType="qss.vo.SalesHistoryVo">
+	/*
+	ID : salesHisotry_sql.SalesHistory_ListExcel
+	DEC : 매출내역 엑셀 리스트 조회
+	*/
+	<include refid="Common.BeforeSQL"/>
+			SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+					,OM.BRAND_IDX		/*브랜드일련번호*/
+					,OM.FRANC_IDX		/*가맹점일련번호*/
+					,OM.ORDER_MASTER_IDX	/*주문마스터 일련번호*/
+					,OM.DEVICE_IDX		/*단말일련번호*/
+					,KS.DEVICE_NAME		/*단말명*/
+					,OM.RECEIPT_NO		/*영수번호*/
+					,DATE_FORMAT(STR_TO_DATE(CONCAT(OM.ORDER_DATE, OM.ORDER_TIME), '%Y%m%d%H%i'),'%Y-%m-%d %H:%i') AS ORDER_DATE   /*주문 시간*/
+					,ifnull(OM.ORDER_TIME, '0000') AS ORDER_TIME		/*주문시간*/
+					,OM.ORDER_AMT		/*구매액*/
+					,OM.DISC_AMT		/*할인액*/
+					,OM.PAY_AMT		/*결제액*/
+					,OM.CARD_AMT		/*카드결제액*/
+					,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'PAY0000' AND CODE_VALUE = OM.PAY_TYPE AND IFNULL(DEL_YN, 'N') = 'N') AS  PAY_TYPE /*결제종류*/
+					,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'ORD0000' AND CODE_VALUE = OM.PAY_PROC_CODE AND IFNULL(DEL_YN, 'N') = 'N') AS  PAY_PROC_CODE /*결제진행코드*/
+					,OM.POINT_TYPE_CODE	/*포인트구분코드*/
+					,OM.POINT_USE_AMT		/*포인트사용금액*/
+					,OM.POINT_SAVE_AMT		/*포인트적립금액*/
+					,OM.CALCULATE_YN		/*정산여부*/
+					,OM.REG_USER		/*등록자*/
+					,date_format(OM.REG_DATE, '%Y%m%d %H:%i:%s') AS REG_DATE		/*등록일*/
+					,OM.MOD_USER		/*수정자*/
+         	  		,date_format(OM.MOD_DATE, '%Y-%m-%d') AS MOD_DATE
+					,#{searchDay} AS searchDay           /*조회조건 시작일*/
+					,#{searchEndDay} AS searchEndDay     /*조회조건 종료일*/
+					FROM ORDER_MASTER OM
+						INNER JOIN franchisee f ON  f.DOMAIN_IDX = OM.DOMAIN_IDX AND f.BRAND_IDX = OM.BRAND_IDX AND f.FRANC_IDX = OM.FRANC_IDX AND ifnull(f.DEL_YN, 'N') = 'N'
+      					INNER JOIN brand b ON  b.DOMAIN_IDX = OM.DOMAIN_IDX AND b.BRAND_IDX = OM.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+		 				LEFT OUTER JOIN KIOSK KS
+		 			ON OM.DOMAIN_IDX = KS.DOMAIN_IDX
+		 			AND OM.BRAND_IDX = KS.BRAND_IDX
+		 			AND OM.FRANC_IDX = KS.FRANC_IDX
+		 			AND OM.DEVICE_IDX = KS.DEVICE_IDX
+			WHERE
+			OM.DOMAIN_IDX = #{domainIdx}
+			<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+				AND OM.BRAND_IDX = #{brandIdx}
+			</if>
+			<if test="francIdx != null and francIdx != null and francIdx != 0">
+				AND OM.FRANC_IDX = #{francIdx}
+			</if>
+			<if test="searchDay != null and searchDay != '' and searchEndDay != null and searchEndDay != ''">
+				AND DATE(OM.ORDER_DATE) BETWEEN #{searchDay} AND #{searchEndDay}
+			</if>
+
+			<if test="sSearch != null and sSearch != ''">
+				AND KS.DEVICE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			</if>
+			<if test="orderMasterIdx != null and orderMasterIdx != ''">
+				AND ORDER_MASTER_IDX = #{orderMasterIdx}
+			</if>
+			<if test="payType != null and payType != ''">
+				AND OM.PAY_TYPE = #{payType}
+			</if>
+
+			<if test="payProcCode != null and payProcCode != ''">
+				AND OM.PAY_PROC_CODE = #{payProcCode}
+			</if>
+			<if test="sSortName == null or sSortName == ''">
+         	ORDER BY STR_TO_DATE(CONCAT(OM.ORDER_DATE, OM.ORDER_TIME), '%Y%m%d%H%i') desc
+         	</if>
+		<include refid="Common.AfterSQL"/>
+	</select>
+</mapper>

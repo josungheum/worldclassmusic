@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MenuInfo">
+	<resultMap type="qss.vo.MenuInfoVo" id="MenuInfoVo" />
+
+	<sql id="CommonSelect">
+			,'' AS idx			/* 도메인+브랜드+가맹점 일련번호 */
+			,'' AS domainIdx	/* 도메인 일련번호 */
+			,'' AS brandIdx		/* 브랜드 일련번호 */
+			,'' AS francIdx		/* 가맹점 일련번호 */
+			,'' AS deviceIdx	/* 장치 일련번호 */
+			,'' AS activeYn		/* 활성화여부 */
+			,'' AS orderSeq		/* 정렬순서 */
+			,reg_User			/* 등록자 */
+			,reg_Date			/* 등록일 */
+			,mod_User			/* 수정자 */
+			,mod_Date			/* 수정일 */
+			,'' AS caseString	/* 조회아이디 */
+			,'' AS serchKey     /*  검색 key  */
+			,'' AS rowCount		/*  데이타  row count  */
+			,'' AS sendUrl      /*  리턴 url  */
+	</sql>
+
+	<!-- 	메뉴조회 쿼리 -->
+	<select id="Menu_List" parameterType="qss.vo.IndexVo" resultType="qss.vo.MenuInfoVo">
+	/*
+	  ID  : menu_sql.Menu_List
+	  DEC : Menu 조회
+	*/
+		SELECT
+			menu_Idx			/* 메뉴정보 일련번호 */
+			,menu_Id			/* 메뉴ID */
+			,menu_Kor_Name	/* 메뉴한글명 */
+			,menu_Eng_Name	/* 메뉴영문명 */
+			,menu_Sub_Name	/* 메뉴서브명 */
+			,menu_Link_Addr	/* 메뉴링크주소 */
+			,parent_Menu_Id	/* 상위메뉴ID */
+			,(select menu_kor_name from menu_info where menu_id = MI.PARENT_MENU_ID) as parent_Menu_Nm
+			,sys_Show_Yn		/* 시스템관리자노출여부 */
+			,brd_Show_Yn		/* 브랜드관리자노출여부 */
+			,frc_Show_Yn		/* 가맹점관리자노출여부 */
+			,del_Yn   		/* 메뉴노출여부 */
+		FROM MENU_INFO MI
+		WHERE 1=1
+		  AND IFNULL(DEL_YN, 'N') = 'N'
+		<if test="adminType != null and adminType != ''">
+			<if test="adminType.equals('ADM0001')">
+			AND ifnull(sys_Show_Yn, 'N') = 'Y'
+			</if>
+			<if test="adminType.equals('ADM0002')">
+			AND ifnull(brd_Show_Yn, 'N') = 'Y'
+			</if>
+			<if test="adminType.equals('ADM0003')">
+			AND ifnull(frc_Show_Yn, 'N') = 'Y'
+			</if>
+		</if>
+		order by order_Seq, menu_Idx
+	</select>
+
+	<!-- 메뉴관리 목록조회 -->
+	<select id="Menu_MenuList" parameterType="qss.vo.MenuInfoVo" resultType="qss.vo.MenuInfoVo" >
+	/*
+	  ID  : menu_sql.Menu_MenuList
+	  DEC : 메뉴관리 목록 조회
+	*/
+        SELECT A.*
+             , FN_GETSTRCOUNT(PATH, ',') AS DEPTH
+             , (SELECT COUNT(1) FROM MENU_INFO WHERE PARENT_MENU_ID = A.MENU_ID AND IFNULL(DEL_YN, 'N') = 'N') AS LEAF
+          FROM (
+                SELECT MENU_ID
+                     , MENU_KOR_NAME
+                     , MENU_ENG_NAME
+                     , MENU_SUB_NAME
+                     , MENU_LINK_ADDR
+                     , PARENT_MENU_ID
+                     , SYS_SHOW_YN
+                     , BRD_SHOW_YN
+                     , FRC_SHOW_YN
+                     , ORDER_SEQ
+                     , DEL_YN
+                     , MENU_IDX
+                     , date_format(MOD_DATE, '%Y-%m-%d') AS MOD_DATE
+                     , ACTIVE_YN
+                     , FN_GETPARENTMENUIDSNORDER(MENU_ID) AS PATH
+                     , ORDER_SEQ - TRUNCATE(ORDER_SEQ, -2) AS ODER_SEQ
+                  FROM MENU_INFO
+                 WHERE 1=1
+                   AND IFNULL(DEL_YN, 'N') = 'N'
+        <if test="menuIdx != null and menuIdx != ''">
+                   AND MENU_IDX			= #{menuIdx}
+        </if>
+        <if test="menuId != null and menuId != ''">
+                   AND MENU_ID			= #{menuId}
+        </if>
+               ) A
+        <if test="pathCond != null and pathCond != ''">
+        HAVING PATH LIKE CONCAT(#{pathCond},'%')
+        </if>
+        ORDER BY PATH ASC
+	</select>
+
+	<!-- 메뉴관리 등록 -->
+	<insert id="Menu_MenuCreate" parameterType="qss.vo.MenuInfoVo">
+	/*
+	  ID  : menu_sql.Menu_MenuCreate
+	  DEC : 메뉴관리 등록
+	*/
+	    <selectKey keyProperty="menuIdx" resultType="biginteger" order="BEFORE">
+	        SELECT IFNULL(MAX(MENU_IDX),10000000000)+1
+	          FROM MENU_INFO
+	    </selectKey>
+	    INSERT
+	      INTO MENU_INFO
+	    (
+	      MENU_IDX			/* 메뉴정보 일련번호 */
+	    , MENU_ID			/* 메뉴ID */
+	    , MENU_KOR_NAME		/* 메뉴한글명 */
+	    , MENU_ENG_NAME		/* 메뉴영문명 */
+	    , MENU_SUB_NAME		/* 메뉴서브명 */
+	    , MENU_LINK_ADDR	/* 메뉴링크주소 */
+	    , PARENT_MENU_ID	/* 상위메뉴ID */
+	    , SYS_SHOW_YN		/* 시스템관리자노출여부 */
+	    , BRD_SHOW_YN		/* 브랜드관리자노출여부 */
+	    , FRC_SHOW_YN		/* 가맹점관리자노출여부 */
+	    , ORDER_SEQ			/* 정렬순서 */
+	    , DEL_YN			/* 삭제여부 */
+	    , REG_USER			/* 등록자 */
+	    , REG_DATE			/* 등록일 */
+	    , MOD_USER			/* 수정자 */
+	    , MOD_DATE  		/* 수정일 */
+	    , ACTIVE_YN			/* 활성화여부 */
+	    ) VALUES (
+	      #{menuIdx}
+	    , #{menuId}
+	    , #{menuKorName}
+	    , #{menuEngName}
+	    , #{menuSubName}
+	    , #{menuLinkAddr}
+	    , #{parentMenuId}
+	    , #{sysShowYn}
+	    , #{brdShowYn}
+	    , #{frcShowYn}
+	    , #{orderSeq}
+	    , 'N'
+	    , #{regUser}
+	    , now()
+	    , #{regUser}
+	    , now()
+	    , #{activeYn}
+	    )
+	</insert>
+
+	<!-- 메뉴관리 수정  -->
+	<update id="Menu_MenuUpdate" parameterType="qss.vo.MenuInfoVo">
+	/*
+	  ID  : menu_sql.Menu_MenuUpdate
+	  DEC : 메뉴관리 수정
+	*/
+	    UPDATE MENU_INFO SET
+	           MOD_USER			= #{regUser}
+	         , MOD_DATE  		= now()
+	    <if test="menuKorName != null and menuKorName != ''">
+	         , MENU_KOR_NAME	= #{menuKorName}
+	         , MENU_ENG_NAME	= #{menuEngName}
+	         , MENU_SUB_NAME	= #{menuSubName}
+	         , MENU_LINK_ADDR	= #{menuLinkAddr}
+	    </if>
+	    <if test="parentMenuId != null and parentMenuId != ''">
+	         , PARENT_MENU_ID	= #{parentMenuId}
+	    </if>
+	    <if test="sysShowYn != null and sysShowYn != ''">
+	         , SYS_SHOW_YN		= #{sysShowYn}
+	    </if>
+	    <if test="brdShowYn != null and brdShowYn != ''">
+	         , BRD_SHOW_YN		= #{brdShowYn}
+	    </if>
+	    <if test="frcShowYn != null and frcShowYn != ''">
+	         , FRC_SHOW_YN		= #{frcShowYn}
+	    </if>
+	    <if test="orderSeq != null and orderSeq != ''">
+	         , ORDER_SEQ		= #{orderSeq}
+	    </if>
+	    <if test="delYn != null and delYn != ''">
+	         , DEL_YN			= #{delYn}
+	    </if>
+	    <if test="activeYn != null and activeYn != ''">
+	         , ACTIVE_YN		= #{activeYn}
+	    </if>
+	     WHERE MENU_IDX			= #{menuIdx}
+	</update>
+
+	<!-- 부모 메뉴 ID의 순서 또는 Max 순서 조회 -->
+	<select id="Menu_MenuGetOrderMax" parameterType="qss.vo.MenuInfoVo" resultType="int">
+	/*
+	  ID  : menu_sql.Menu_MenuGetOrderMax
+	  DEC : 부모 메뉴 ID의 순서 또는 Max 순서 조회
+	*/
+		SELECT
+		<choose>
+		  <when test="parentMenuId != null and parentMenuId != ''">
+		       IFNULL(MAX(ORDER_SEQ),0)
+		  </when>
+		  <otherwise>
+		  	   TRUNCATE(IFNULL(MAX(ORDER_SEQ),0),-2)
+		  </otherwise>
+		</choose>
+		  FROM MENU_INFO
+		 WHERE IFNULL(DEL_YN, 'N') = 'N'
+		<if test="parentMenuId != null and parentMenuId != ''">
+		   AND (PARENT_MENU_ID = #{parentMenuId} OR MENU_ID = #{parentMenuId})
+		</if>
+	</select>
+
+	<!-- 메뉴 ID의 중복 체크 -->
+	<select id="Menu_MenuDupCheck" parameterType="qss.vo.MenuInfoVo" resultType="int">
+	/*
+	  ID  : menu_sql.Menu_MenuDupCheck
+	  DEC : 메뉴 ID의 중복 체크
+	*/
+		SELECT COUNT(1)
+		  FROM MENU_INFO
+		 WHERE IFNULL(DEL_YN, 'N') 	= 'N'
+		   AND MENU_ID 				=  #{menuId}
+	</select>
+
+	<!-- 조회된 orderSeq보다 큰 orderSeq는 모두 +1 해줌 -->
+	<update id="Menu_MenuUpdateOrderSeq" parameterType="qss.vo.MenuInfoVo">
+	/*
+	  ID  : menu_sql.Menu_MenuUpdateOrderSeq
+	  DEC : 조회된 orderSeq보다 큰 orderSeq는 모두 +1 해줌
+	*/
+		UPDATE MENU_INFO SET
+		       ORDER_SEQ = ORDER_SEQ + 1
+		 WHERE IFNULL(DEL_YN, 'N') 	= 'N'
+		   AND ORDER_SEQ >= #{orderSeq}
+	</update>
+
+	<!-- 메뉴 순서의 UP순서 조회 -->
+	<select id="Menu_MenuUpSearch" parameterType="qss.vo.MenuInfoVo" resultType="qss.vo.MenuInfoVo">
+	/*
+	  ID  : menu_sql.Menu_MenuUpSearch
+	  DEC : 메뉴 순서의 UP순서 조회
+	*/
+		SELECT MENU_IDX
+		     , ORDER_SEQ
+		  FROM MENU_INFO
+		 WHERE 1=1
+		<choose>
+		  <when test="parentMenuId != null and parentMenuId != ''">
+		   AND PARENT_MENU_ID = #{parentMenuId}
+		  </when>
+		  <otherwise>
+		   AND PARENT_MENU_ID IS NULL
+		  </otherwise>
+		</choose>
+		<choose>
+		  <when test="treeUpDown != null and treeUpDown.equalsIgnoreCase('U')">
+		   AND ORDER_SEQ <![CDATA[ < ]]> #{orderSeq}
+		 ORDER BY ORDER_SEQ DESC
+		  </when>
+		  <otherwise>
+		   AND ORDER_SEQ <![CDATA[ > ]]> #{orderSeq}
+		 ORDER BY ORDER_SEQ ASC
+		  </otherwise>
+		</choose>
+		 LIMIT 1
+	</select>
+
+</mapper>

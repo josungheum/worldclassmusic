@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PlayReport">
+	<resultMap type="qss.vo.PlayReportVo" id="PlayReportVo" />
+
+	<select id="PlayReport_ServiceList" parameterType="qss.vo.PlayReportVo" resultType="hashmap">
+		SELECT	BRAND_IDX as brandIdx, NAME as brandName
+		FROM	brand
+		WHERE	ACTIVE_YN = 'Y'
+				AND DEL_YN = 'N'
+		        AND DOMAIN_IDX = #{domainIdx}
+	</select>
+	
+	<select id="PlayReport_SiteList" parameterType="qss.vo.PlayReportVo" resultType="hashmap">
+		SELECT	BRAND_IDX as brandIdx,
+				FRANC_IDX as francIdx,
+				FRANC_NAME as francName
+		FROM	franchisee
+		WHERE	ACTIVE_YN = 'Y'
+				AND DEL_YN = 'N'
+		        AND DOMAIN_IDX = #{domainIdx}
+		        <if test='brandIdx != "" and brandIdx != null and brandIdx != 0'>
+		        	AND BRAND_IDX = #{brandIdx}
+		        </if>
+	</select>
+	
+	<select id="PlayReport_PlayerList" parameterType="qss.vo.PlayReportVo" resultType="hashmap">
+		SELECT	BRAND_IDX as brandIdx,
+				FRANC_IDX as francIdx,
+				DEVICE_IDX as deviceIdx,
+				DEVICE_NAME as deviceName
+		FROM	kiosk
+		WHERE	ACTIVE_YN = 'Y'
+				AND DEL_YN = 'N'
+		        AND DOMAIN_IDX = #{domainIdx}
+		        <if test='brandIdx != "" and brandIdx != null and brandIdx != 0'>
+		        	AND BRAND_IDX = #{brandIdx}
+		        </if>
+		        <if test='francIdx != "" and francIdx != null and francIdx != 0'>
+		        	AND FRANC_IDX = #{francIdx}
+		        </if>
+	</select>
+	
+	<select id="PlayReport_List" parameterType="qss.vo.PlayReportVo" resultType="qss.vo.PlayReportVo">
+		<include refid="Common.BeforeSQL"/>
+		SELECT	A.PLAYLOG_IDX,
+				A.BRAND_IDX,
+		        B.NAME AS SERVICE_NAME,
+		        A.FRANC_IDX,
+		        C.FRANC_NAME AS SITE_NAME,
+		        A.DEVICE_IDX,
+		        D.DEVICE_NAME AS PLAYER_NAME,
+		        A.MAIN_SCHEDULE_IDX,
+		        A.SCREEN_IDX,
+		        E.SCREEN_NAME,
+		        A.FILE_CONTENT_IDX,
+		        F.FILE_NAME,
+		        A.PL_PLAYDATE,
+		        A.PL_STARTTIME,
+		        A.PL_ENDTIME,
+		        A.PL_PLAYTIME,
+		        A.PL_PLAYMILLITIME
+		FROM	playlog_h A
+				INNER JOIN brand B ON A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N'
+		        INNER JOIN franchisee C ON A.FRANC_IDX = C.FRANC_IDX AND C.DEL_YN = 'N'
+		        INNER JOIN kiosk D ON A.DEVICE_IDX = D.DEVICE_IDX AND D.DEL_YN = 'N'
+		        INNER JOIN screen E ON A.SCREEN_IDX = E.SCREEN_IDX AND E.DEL_YN = 'N'
+		        INNER JOIN file_content F ON A.FILE_CONTENT_IDX = F.FILE_CONTENT_IDX
+		WHERE	A.PL_PLAYDATE = #{plPlaydate}
+				<if test='brandIdx != "" and brandIdx != null and brandIdx != 0'>
+		        	AND A.BRAND_IDX = #{brandIdx}
+		        </if>
+		        <if test='francIdx != "" and francIdx != null and francIdx != 0'>
+		        	AND A.FRANC_IDX = #{francIdx}
+		        </if>
+		        <if test='deviceIdx != "" and deviceIdx != null and deviceIdx != 0'>
+		        	AND A.DEVICE_IDX = #{deviceIdx}
+		        </if>
+		        <if test='screenName != "" and screenName != null and screenName != "$ALL"'>
+		        	AND E.SCREEN_NAME LIKE CONCAT('%',#{screenName},'%')
+		        </if>
+		<include refid="Common.AfterSQL"/>
+	</select>
+	
+	<select id="PlayReport_ListCnt" parameterType="qss.vo.PlayReportVo" resultType="int">
+		SELECT	COUNT(A.PLAYLOG_IDX) AS CNT
+		FROM	playlog_h A
+				INNER JOIN brand B ON A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N'
+		        INNER JOIN franchisee C ON A.FRANC_IDX = C.FRANC_IDX AND C.DEL_YN = 'N'
+		        INNER JOIN kiosk D ON A.DEVICE_IDX = D.DEVICE_IDX AND D.DEL_YN = 'N'
+		        INNER JOIN screen E ON A.SCREEN_IDX = E.SCREEN_IDX AND E.DEL_YN = 'N'
+		        INNER JOIN file_content F ON A.FILE_CONTENT_IDX = F.FILE_CONTENT_IDX
+		WHERE	A.PL_PLAYDATE = #{plPlaydate}
+				<if test='brandIdx != "" and brandIdx != null and brandIdx != 0'>
+		        	AND A.BRAND_IDX = #{brandIdx}
+		        </if>
+		        <if test='francIdx != "" and francIdx != null and francIdx != 0'>
+		        	AND A.FRANC_IDX = #{francIdx}
+		        </if>
+		        <if test='deviceIdx != "" and deviceIdx != null and deviceIdx != 0'>
+		        	AND A.DEVICE_IDX = #{deviceIdx}
+		        </if>
+		        <if test='screenName != "" and screenName != null and screenName != "$ALL"'>
+		        	AND E.SCREEN_NAME LIKE CONCAT('%',#{screenName},'%')
+		        </if>
+	</select>
+</mapper>

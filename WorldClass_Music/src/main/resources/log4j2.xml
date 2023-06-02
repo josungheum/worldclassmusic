@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %5p [%c] %m%n" />
+        </Console>
+        <File name="file" fileName="/home/qvoss/apache-tomcat-9.0.37/logs/log.txt" append="false">
+			<PatternLayout pattern="%d %-5p [%t] %-17c{2} (%13F:%L) %3x = %m%n" />
+		</File>
+    </Appenders>
+    <Loggers>
+    	<Logger name="qss" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
+        </Logger>
+        <Logger name="egovframework" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
+        </Logger>
+	    <Logger name="org.springframework" level="ERROR" additivity="false">
+	        <AppenderRef ref="console" />
+	        <AppenderRef ref="file" />
+	    </Logger>
+        <Logger name="java.sql.Connection" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="java.sql.Statement" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="java.sql.PreparedStatement" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="java.sql.ResultSet" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+		  <!-- log SQL with timing information, post execution -->
+	    <Logger name="jdbc.sqlonly" level="ERROR" additivity="false">
+	        <AppenderRef ref="console" />
+	    </Logger>
+	    <Logger name="jdbc.resultsettable" level="ERROR" additivity="false">
+	        <AppenderRef ref="console" />
+	    </Logger>
+        <Root level="ERROR">
+            <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
+        </Root>
+    </Loggers>
+</Configuration>

@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Screen">
+	<resultMap type="qss.vo.ScreenVo" id="ScreenVo" />
+
+	<select id="Screen_ScreenList" parameterType="qss.vo.ScreenVo" resultType="qss.vo.ScreenVo">
+	/*
+	ID : screen_sql.Screen_ScreenList
+	DEC : 스크린 리스트 조회
+	*/
+	<include refid="Common.BeforeSQL"/>
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+			SELECT   S.DOMAIN_IDX 	/*도메인일련번호*/ 
+					,S.BRAND_IDX 		/*서비스일련번호*/
+					,S.SCREEN_IDX 	/*스크린 일련번호*/
+					,S.SCREEN_NAME 	/*스크린명*/
+					,S.ROW_CNT 		/*행갯수*/
+					,S.COL_CNT 		/*열갯수*/
+					,S.PLAY_TIME 		/*재생시간*/
+					,S.RESOLUTION_X 	/*해상도X좌표*/
+					,S.RESOLUTION_Y 	/*해상도Y좌표*/
+	<!-- 				,ifnull(DEL_YN, 'N') AS DEL_YN    /*삭제여부*/ -->
+					,( SELECT COUNT(*)  FROM   SCHEDULE_SCREEN WHERE  ifnull(DEL_YN, 'N') = 'N' AND    DOMAIN_IDX = S.DOMAIN_IDX AND    BRAND_IDX = S.BRAND_IDX AND  SCREEN_IDX = S.SCREEN_IDX AND SCREEN_TYPE = 'S') AS DEL_YN
+					,S.REG_USER         		/*등록자*/
+					,date_format(S.REG_DATE, '%Y-%m-%d') AS REG_DATE		/*등록일*/
+					,S.MOD_USER         		/*수정자*/
+					,date_format(S.MOD_DATE, '%Y-%m-%d') AS MOD_DATE		/*수정일*/
+			FROM  SCREEN S
+					INNER JOIN brand b ON  b.DOMAIN_IDX = S.DOMAIN_IDX AND b.BRAND_IDX = S.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+			WHERE IFNULL(S.DEL_YN, 'N') = 'N'
+			AND   S.DOMAIN_IDX = #{domainIdx}
+			<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+				AND S.BRAND_IDX = #{brandIdx}
+			</if>
+			<if test="sSearch != null and sSearch != ''">
+	            AND S.SCREEN_NAME LIKE CONCAT('%',#{sSearch},'%')
+	        </if>
+	    </if>
+	    <!-- 시스템 관라지가 아닐경우(서비스, 매장 관리자) -->
+		 <if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+		 	SELECT   S.DOMAIN_IDX 	/*도메인일련번호*/
+					,S.BRAND_IDX 		/*서비스일련번호*/
+					,S.SCREEN_IDX 	/*스크린 일련번호*/
+					,S.SCREEN_NAME 	/*스크린명*/
+					,S.ROW_CNT 		/*행갯수*/
+					,S.COL_CNT 		/*열갯수*/
+					,S.PLAY_TIME 		/*재생시간*/
+					,S.RESOLUTION_X 	/*해상도X좌표*/
+					,S.RESOLUTION_Y 	/*해상도Y좌표*/
+	<!-- 				,ifnull(DEL_YN, 'N') AS DEL_YN    /*삭제여부*/ -->
+					,( SELECT COUNT(*)  FROM   SCHEDULE_SCREEN WHERE  ifnull(DEL_YN, 'N') = 'N' AND    DOMAIN_IDX = S.DOMAIN_IDX AND    BRAND_IDX = S.BRAND_IDX AND   SCREEN_IDX = S.SCREEN_IDX AND SCREEN_TYPE = 'S') AS DEL_YN
+					,S.REG_USER         		/*등록자*/
+					,date_format(S.REG_DATE, '%Y-%m-%d') AS REG_DATE		/*등록일*/
+					,S.MOD_USER         		/*수정자*/
+					,date_format(S.MOD_DATE, '%Y-%m-%d') AS MOD_DATE		/*수정일*/
+			FROM  SCREEN S
+					INNER JOIN brand b ON  b.DOMAIN_IDX = S.DOMAIN_IDX AND b.BRAND_IDX = S.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+			WHERE IFNULL(S.DEL_YN, 'N') = 'N'
+			AND   S.DOMAIN_IDX = #{domainIdx}
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+			 	/* 서비스 관리자는 해당 서비스에 포함된 모든 매장 포함되게 또는 선택한 매장만 */
+				AND S.BRAND_IDX = #{sessionBrandIdx}
+			 </if>
+
+			 <if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+			 	/* 매장 관리자는 자신이 속한 서비스의 자기 매장만 보이게 */
+			 	AND S.BRAND_IDX = #{sessionBrandIdx}
+			 </if>
+			<if test="sSearch != null and sSearch != ''">
+	            AND S.SCREEN_NAME LIKE CONCAT('%',#{sSearch},'%')
+	        </if>
+		 </if>
+		 <if test="sSortName == null or sSortName == ''">
+<!-- 		 ORDER BY S.MOD_DATE -->
+		 </if>
+		<include refid="Common.AfterSQL"/>
+	</select>
+
+	<select id="Screen_ScreenListCnt" parameterType="qss.vo.ScreenVo" resultType="int">
+		/*
+		  ID  : screen_sql.Screen_ScreenListCnt
+		  DEC : 스크린 리스트 Cnt 조회
+		*/
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+		 SELECT COUNT(S.DOMAIN_IDX)
+		 FROM   SCREEN S
+		 		INNER JOIN brand b ON  b.DOMAIN_IDX = S.DOMAIN_IDX AND b.BRAND_IDX = S.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+		 WHERE IFNULL(S.DEL_YN, 'N') = 'N'
+		 AND   S.DOMAIN_IDX = #{domainIdx}
+		 <if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+			AND S.BRAND_IDX = #{brandIdx}
+		 </if>
+		 <if test="sSearch != null and sSearch != ''">
+            AND S.SCREEN_NAME LIKE CONCAT('%',#{sSearch},'%')
+         </if>
+         </if>
+	    <!-- 시스템 관라지가 아닐경우(서비스, 매장 관리자) -->
+		 <if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+		 	 SELECT COUNT(S.DOMAIN_IDX)
+			 FROM   SCREEN S
+			 		INNER JOIN brand b ON  b.DOMAIN_IDX = S.DOMAIN_IDX AND b.BRAND_IDX = S.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+			 WHERE IFNULL(S.DEL_YN, 'N') = 'N'
+			 AND   S.DOMAIN_IDX = #{domainIdx}
+			 <if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+			 	/* 서비스 관리자는 해당 서비스에 포함된 모든 매장 포함되게 또는 선택한 매장만 */
+				AND S.BRAND_IDX = #{sessionBrandIdx}
+			 </if>
+
+			 <if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+			 	/* 매장 관리자는 자신이 속한 서비스의 자기 매장만 보이게 */
+			 	AND S.BRAND_IDX = #{sessionBrandIdx}
+			 </if>
+			 <if test="sSearch != null and sSearch != ''">
+	            AND SCREEN_NAME LIKE CONCAT('%',#{sSearch},'%')
+	         </if>
+		 </if>
+	</select>
+
+	<select id="Screen_ScreenGet" parameterType="qss.vo.ScreenVo" resultType="qss.vo.ScreenVo">
+	/*
+	ID : screen_sql.Screen_ScreenGet
+	DEC : 스크린 상세 조회
+	*/
+	SELECT
+			 SC.DOMAIN_IDX 	/*도메인일련번호*/
+			,SC.BRAND_IDX 		/*서비스일련번호*/
+			,SC.SCREEN_IDX 	/*스크린 일련번호*/
+			,SC.SCREEN_NAME 	/*스크린명*/
+			,SC.ROW_CNT 		/*행갯수*/
+			,SC.COL_CNT 		/*열갯수*/
+			,LAYCO.PLAY_TIME 		/*재생시간*/
+			,SC.RESOLUTION_X 	/*해상도X좌표*/
+			,SC.RESOLUTION_Y 	/*해상도Y좌표*/
+			,SC.DEL_YN         /*삭제여부*/
+			,SC.REG_USER         /*등롷자*/
+			,SC.REG_DATE         /*등록일*/
+			,SC.MOD_USER         /*수정자*/
+			,SC.MOD_DATE         /*수정일*/
+      		,SCLAY.SCREEN_LAYER_IDX
+	      	,SCLAY.SCREEN_LAYER_NAME
+	      	,SCLAY.START_COL
+	      	,SCLAY.START_ROW
+	      	,SCLAY.COL_SPAN
+	      	,SCLAY.ROW_SPAN
+	      	,SCLAY.ORDER_SEQ
+	      	,LAYCO.LAYER_CONTENT_IDX
+	      	,FCON.FILE_CONTENT_IDX
+		    ,FCON.FILE_NAME
+		    ,FCON.FILE_SAVE_NAME
+		    ,FCON.SAVE_PATH
+		    ,FCON.FILE_SIZE
+		    ,FCON.CHECK_SUM
+		FROM   SCREEN SC
+				LEFT OUTER JOIN SCREEN_LAYER SCLAY
+	        		ON SC.DOMAIN_IDX = SCLAY.DOMAIN_IDX AND SC.BRAND_IDX = SCLAY.BRAND_IDX
+	        		AND SC.SCREEN_IDX = SCLAY.SCREEN_IDX
+	       		LEFT OUTER JOIN  LAYER_CONTENT LAYCO
+	       			ON SCLAY.DOMAIN_IDX = LAYCO.DOMAIN_IDX AND SCLAY.BRAND_IDX = LAYCO.BRAND_IDX
+	       			AND SCLAY.SCREEN_IDX = LAYCO.SCREEN_IDX AND SCLAY.SCREEN_LAYER_IDX = LAYCO.SCREEN_LAYER_IDX
+	       		LEFT JOIN  FILE_CONTENT FCON
+	       			ON LAYCO.FILE_CONTENT_IDX = FCON.FILE_CONTENT_IDX
+	WHERE
+	SC.DOMAIN_IDX = #{domainIdx}
+	<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+		AND SC.BRAND_IDX = #{brandIdx}
+	</if>
+	AND SC.SCREEN_IDX = #{screenIdx}
+	AND ifnull(FCON.DEL_YN, 'N') = 'N'
+	</select>
+
+
+	<update id="Screen_Delete" statementType="CALLABLE" parameterType="hashmap">
+	/*
+	ID : screen_sql.Screen_Delete
+	DEC : 스크린 정보 삭제
+	*/
+		<![CDATA[
+			UPDATE  SCREEN
+		    SET     DEL_YN = 'Y',
+		            MOD_USER = #{modUser},
+		            MOD_DATE = NOW()
+		    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+		]]>
+		<if test="arrIndex != null and arrIndex != null and arrIndex != 0">
+		AND SCREEN_IDX IN
+		<foreach collection="arrIndex" item="screenIdx"  open="(" close=")" separator=",">
+            #{screenIdx}
+        </foreach>
+        </if>
+	</update>
+
+
+	<insert id="Screen_InsertScreen" parameterType="hashmap" useGeneratedKeys="true">
+		<selectKey keyProperty="screenIdx" resultType="biginteger" order="BEFORE">
+			SELECT
+				IFNULL(MAX(SCREEN_IDX) + 1, 1)
+			FROM SCREEN
+		</selectKey>
+		<![CDATA[
+			INSERT INTO SCREEN(
+								DOMAIN_IDX,
+								BRAND_IDX,
+								SCREEN_IDX,
+								SCREEN_NAME,
+					            ROW_CNT,
+					            COL_CNT,
+					            PLAY_TIME,
+					            RESOLUTION_X,
+					            RESOLUTION_Y,
+					            DEL_YN,
+					            REG_USER,
+					            REG_DATE,
+					            MOD_USER,
+					            MOD_DATE
+							  )
+                		VALUES(
+                				#{domainIdx},
+                			    #{brandIdx},
+                				#{screenIdx},
+								#{screenName},
+					            #{rowCnt},
+					            #{colCnt},
+					            #{playTime},
+					            #{resolutionX},
+					            #{resolutionY},
+					            #{delYn},
+					            #{regUser},
+					            NOW(),
+					            #{modUser},
+					            NOW()
+					           )
+		]]>
+	</insert>
+
+	<insert id="Screen_InsertScreenLayer" parameterType="hashmap">
+		<selectKey keyProperty="screenLayerIdx" resultType="biginteger" order="BEFORE">
+		SELECT
+			IFNULL(MAX(SCREEN_LAYER_IDX) + 1, 1)
+		FROM SCREEN_LAYER
+		</selectKey>
+
+		<![CDATA[
+			INSERT INTO SCREEN_LAYER
+						(
+							DOMAIN_IDX,
+							BRAND_IDX,
+							SCREEN_IDX,
+							SCREEN_LAYER_IDX,
+							SCREEN_LAYER_NAME,
+							START_COL,
+							START_ROW,
+							COL_SPAN,
+							ROW_SPAN,
+							PLAY_TIME,
+							ORDER_SEQ,
+							DEL_YN,
+							REG_USER,
+							REG_DATE,
+							MOD_USER,
+							MOD_DATE
+						)
+                		VALUES(
+                			   #{domainIdx},
+                			   #{brandIdx},
+                			   #{screenIdx},
+                			   #{screenLayerIdx},
+                			   #{screenlayerName},
+                			   #{startCol},
+                			   #{startRow},
+                			   #{colSpan},
+                			   #{rowSpan},
+                			   #{playTime},
+                			   #{orderSeq},
+                			   'N',
+                			   #{regUser},
+                			   NOW(),
+                			   #{modUser},
+                			   NOW()
+                			   )
+
+		]]>
+
+	</insert>
+
+	<insert id="Screen_InsertLayerContent" parameterType="hashmap" >
+		<![CDATA[
+			INSERT INTO LAYER_CONTENT
+						(
+							DOMAIN_IDX,
+							BRAND_IDX,
+							SCREEN_IDX,
+							SCREEN_LAYER_IDX,
+							LAYER_CONTENT_IDX,
+							FILE_CONTENT_IDX,
+							PLAY_TIME,
+							ORDER_SEQ,
+							DEL_YN,
+							REG_USER,
+							REG_DATE,
+							MOD_USER,
+							MOD_DATE
+						)
+                		VALUES
+                		(
+                			#{domainIdx},
+               			    #{brandIdx},
+               			    #{screenIdx},
+               			    #{screenLayerIdx},
+               			    (
+               			   	SELECT D.SEQ
+               			   	FROM(
+               			   			SELECT
+               			   				(
+               			   					SELECT ifnull(MAX(LAYER_CONTENT_IDX) + 1, 1)
+               			   					FROM LAYER_CONTENT
+               			   				) AS SEQ
+               			   		) AS D
+               			   	),
+               			   	#{fileContentIdx},
+               			    #{playTime},
+               			    #{orderSeq},
+               			    'N',
+               			    #{regUser},
+               			    NOW(),
+               			    #{modUser},
+               			    NOW()
+               			)
+		]]>
+	</insert>
+
+	<update id="Screen_UpdateScreen" parameterType="hashmap" >
+	/*
+	ID : screen_sql.Screen_UpdateScreen
+	DEC : 스크린 정보 수정
+	*/
+		<![CDATA[
+			UPDATE  SCREEN
+		    SET     SCREEN_NAME = #{screenName},
+		            ROW_CNT = #{rowCnt},
+		            COL_CNT = #{colCnt},
+		            PLAY_TIME = #{playTime},
+		            RESOLUTION_X = #{resolutionX},
+		            RESOLUTION_Y = #{resolutionY},
+		            DEL_YN = #{delYn},
+		            MOD_USER = #{modUser},
+		            MOD_DATE = NOW()
+		    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+		            AND SCREEN_IDX = #{screenIdx}
+		]]>
+	</update>
+
+	<update id="Screen_UpdateFile" parameterType="hashmap" >
+	/*
+	ID : screen_sql.Screen_UpdateFile
+	DEC : 파일 컨텐츠의 파일에 대한 삭제여부 Y
+	*/
+		<![CDATA[
+			UPDATE  FILE_CONTENT
+		    SET     DEL_YN = 'Y'
+		    WHERE   FILE_CONTENT_IDX IN (SELECT  FILE_CONTENT_IDX
+		                    FROM    LAYER_CONTENT
+		                    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+		                    		AND SCREEN_IDX = #{screenIdx}
+		                    )
+		]]>
+	</update>
+
+	<delete id="Screen_DeleteContent" parameterType="hashmap" >
+	/*
+	ID : screen_sql.Screen_DeleteContent
+	DEC : 컨텐츠 정보 삭제
+	*/
+		<![CDATA[
+			DELETE FROM LAYER_CONTENT
+    		WHERE  DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND SCREEN_IDX = #{screenIdx}
+		]]>
+	</delete>
+
+	<delete id="Screen_DeleteLayer" parameterType="hashmap" >
+		<![CDATA[
+			DELETE FROM SCREEN_LAYER
+    		WHERE  DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND SCREEN_IDX = #{screenIdx}
+		]]>
+	</delete>
+
+	<select id="Screen_SelectScheduleCnt" parameterType="qss.vo.ScreenVo" resultType="int">
+	/*
+		ID : screen_sql.Screen_SelectScheduleCnt
+		DEC : 스크린이 적용된 스케줄 CNT 조회
+		*/
+		SELECT  COUNT(1)
+		FROM    MAIN_SCHEDULE
+		WHERE   MAIN_SCHEDULE_IDX IN
+		(
+           SELECT  MAIN_SCHEDULE_IDX
+           FROM    SCHEDULE_SCREEN
+           WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+           AND ifnull(DEL_YN, 'N') = 'N'
+           AND SCREEN_TYPE = 'S'
+		   <if test="arrIndex != null and arrIndex != null and arrIndex != 0">
+		   AND SCREEN_IDX IN
+		   <foreach collection="arrIndex" item="screenIdx"  open="(" close=")" separator=",">
+			          #{screenIdx}
+		   </foreach>
+		   </if>
+		)
+		 AND     ifnull(DEL_YN, 'N') = 'N'
+	</select>
+
+	<select id="Screen_SelectScheduleDeviceList" parameterType="qss.vo.ScreenVo" resultType="string">
+	/*
+		ID : screen_sql.Screen_SelectScheduleDeviceList
+		DEC : 스케줄 버전 적용 단말 리스트 조회
+		*/
+		<![CDATA[
+           SELECT  DEVICE_IDX
+           FROM    KIOSK
+           WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+                    AND DEVICE_IDX IN (
+                               SELECT  DEVICE_IDX
+                               FROM    SCHEDULE_TARGET
+                               WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} 
+                               		   AND MAIN_SCHEDULE_IDX IN
+                               						(
+                                                       SELECT  MAIN_SCHEDULE_IDX
+                                                       FROM    MAIN_SCHEDULE
+                                                       WHERE   MAIN_SCHEDULE_IDX IN
+                                                       						(
+                                                                          SELECT  MAIN_SCHEDULE_IDX
+                                                                          FROM    SCHEDULE_SCREEN
+                                                                          WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+                                                                           	AND SCREEN_IDX = #{screenIdx} AND ifnull(DEL_YN, 'N') = 'N' AND SCREEN_TYPE = 'S'
+                                                                          )
+                                                       AND     ifnull(DEL_YN, 'N') = 'N'
+                                                       AND     ifnull(ACTIVE_YN, 'N') = 'N'
+                                                       )
+                                )
+           AND ifnull(DEL_YN, 'N') = 'N'
+		]]>
+	</select>
+
+	<update id="Screen_UpdateScheduleVersion" parameterType="hashmap" >
+		/*
+		ID : screen_sql.Screen_UpdateScheduleVersion
+		DEC : 스케줄 버전 update
+		*/
+		<selectKey keyProperty="scheduleVersionIdx" resultType="biginteger" order="BEFORE">
+			SELECT
+				IFNULL(MAX(SCHEDULE_VERSION_IDX) + 1, 1)
+			FROM SCHEDULE_VERSION
+		</selectKey>
+			INSERT INTO SCHEDULE_VERSION
+			(
+				DOMAIN_IDX				/*도메인일련번호*/
+				,BRAND_IDX				/*서비스일련번호*/
+				,FRANC_IDX 				/*사이트일련번호*/
+				,DEVICE_IDX				/*단말일련번호*/
+				,SCHEDULE_VERSION_IDX   /*스케줄버전일련번호*/
+				,SCHEDULE_TYPE 			/*스케줄타입*/
+				,MOD_REASON				/*수정사유*/
+				,REG_USER         		/*등롷자*/
+				,REG_DATE         		/*등록일*/
+				,MOD_USER         		/*수정자*/
+				,MOD_DATE         		/*수정일*/
+			  )
+			VALUES
+			(
+				#{domainIdx},
+     			#{brandIdx},
+      			#{francIdx},
+      			#{deviceIdx},
+				#{scheduleVersionIdx},
+				#{scheduleType},
+	            #{modReason},
+	            #{regUser},
+	            NOW(),
+	            #{modUser},
+	            NOW()
+			) ON DUPLICATE KEY
+			UPDATE
+				MOD_REASON	= #{modReason},
+				MOD_DATE	= NOW()
+	</update>
+
+	<insert id="Screen_InsertScheduleVersion" parameterType="qss.vo.ScreenVo">
+		/*
+		ID : screen_sql.Screen_InsertScheduleVersion
+		DEC : 스케줄 버전 update
+		*/
+		INSERT INTO SCHEDULE_VERSION
+		(
+		  DEVICE_CODE
+		 ,SCHEDULE_VERSION_IDX
+		 ,SCHEDULE_TYPE
+		 ,MOD_REASON
+		 ,REG_USER
+		 ,REG_DATE
+		 ,MOD_USER
+		 ,MOD_DATE
+		)
+		SELECT
+			  K.DEVICE_CODE
+			  ,(SELECT IFNULL(MAX(SCHEDULE_VERSION_IDX) + 1, 1) FROM SCHEDULE_VERSION) AS SCHEDULE_VERSION_IDX
+			  ,#{scheduleType} AS SCHEDULE_TYPE
+			  ,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'SCH0000' AND CODE_VALUE = #{scheduleType} AND IFNULL(DEL_YN, 'N') = 'N') AS MOD_REASON
+			  ,#{regUser} AS REG_USER
+			  ,now() AS REG_DATE
+			  ,#{regUser} AS MOD_USER
+			  ,now() AS MOD_DATE
+		FROM MAIN_SCHEDULE MS
+		  INNER JOIN SCHEDULE_TARGET ST
+		  ON MS.DOMAIN_IDX = ST.DOMAIN_IDX AND MS.BRAND_IDX = ST.BRAND_IDX AND MS.MAIN_SCHEDULE_IDX = ST.MAIN_SCHEDULE_IDX
+		  INNER JOIN KIOSK K
+		  ON ST.DOMAIN_IDX = K.DOMAIN_IDX AND ST.BRAND_IDX = K.BRAND_IDX AND ST.DEVICE_IDX = K.DEVICE_IDX
+		WHERE
+			( MS.DOMAIN_IDX ,MS.BRAND_IDX ,MS.MAIN_SCHEDULE_IDX )
+			IN (
+			    SELECT
+			    SSC.DOMAIN_IDX
+			    ,SSC.BRAND_IDX
+			    ,SSC.MAIN_SCHEDULE_IDX
+			    FROM
+			    SCREEN SC INNER JOIN SCHEDULE_SCREEN SSC
+			    ON SC.DOMAIN_IDX = SSC.DOMAIN_IDX AND SC.BRAND_IDX = SSC.BRAND_IDX AND SC.SCREEN_IDX = SSC.SCREEN_IDX
+			    WHERE SC.SCREEN_IDX = #{screenIdx}
+			    AND  SSC.SCREEN_TYPE = 'S'
+			)
+			AND IFNULL(MS.DEL_YN, 'N') = 'N'
+			GROUP BY K.DEVICE_CODE
+	</insert>
+
+</mapper>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Index">
+	<resultMap type="qss.vo.IndexVo" id="IndexResult" />
+
+	<select id="Login_GetIdCheck" parameterType="hashmap" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM USERS
+		WHERE ID = #{id}
+	</select>
+
+	<select id="Login_GetIdPwdCheck" parameterType="hashmap" resultType="hashMap">
+	/*
+	  ID  : index_sql.Login_GetIdPwdCheck
+	  DEC : 사용자 ID, Password 조회
+	*/
+		SELECT
+			 (SELECT IFNULL(MAX(id), 'N') AS idCheck FROM USERS WHERE ID = #{id} AND IFNULL(DEL_YN, 'N') = 'N') AS idCheck
+			,(SELECT IFNULL(MAX(id), 'N') AS idCheck FROM USERS WHERE ID = #{id} AND IFNULL(ACTIVE_YN, 'Y') = 'Y') AS activeCheck
+			,(SELECT IFNULL(MAX(id), 'N') AS passwordCheck FROM USERS WHERE ID = #{id} AND PASSWORD = #{password}) AS passwordCheck
+			,(SELECT IFNULL(PASSWORD_FAIL_COUNT, 0)  AS passwordCntCheck FROM USERS WHERE ID = #{id}) AS passwordCntCheck
+			,(
+		        SELECT IFNULL(MAX(id), 'N') AS passwordCheck
+		        FROM USERS U
+		        WHERE ID = #{id}
+		        AND (((SELECT DEL_YN FROM franchisee WHERE DOMAIN_IDX = U.DOMAIN_IDX AND BRAND_IDX = U.BRAND_IDX AND FRANC_IDX = U.FRANC_IDX) = 'N') OR (ADMIN_TYPE = 'ADM0001' OR ADMIN_TYPE = 'ADM0002'))
+		        ) AS francCheck
+		    ,(
+		        SELECT IFNULL(MAX(id), 'N') AS passwordCheck
+		        FROM USERS U
+		        WHERE ID = #{id}
+		        AND (((SELECT DEL_YN FROM brand WHERE DOMAIN_IDX = U.DOMAIN_IDX AND BRAND_IDX = U.BRAND_IDX) = 'N') OR ADMIN_TYPE = 'ADM0001')
+		    ) AS brandCheck
+		FROM DUAL
+	</select>
+	<select id="Login_GetLockCheck" statementType="CALLABLE" parameterType="hashmap">
+		SELECT
+			DOMAIN_IDX
+			,ADMIN_TYPE
+			,NAME
+			,PASSWORD
+			,ACTIVE_YN
+			,BRAND_IDX
+			,FRANC_IDX
+			,REG_USER
+			, date_format(REG_DATE, '%Y-%m-%d') AS REG_DATE
+			,MOD_USER
+			,MOD_DATE
+		FROM USERS
+		WHERE ID = #{id}
+	</select>
+	<select id="Login_GetMember" parameterType="hashmap"  resultType="qss.vo.IndexVo">
+	/*
+	  ID  : index_sql.Login_GetMember
+	  DEC : 사용자 정보 조회
+	*/
+		SELECT
+			ID            /* 아이디 */
+			,ADMIN_TYPE    /* 관리자유형 */
+			,NAME          /* 이름 */
+			,PASSWORD      /* 비밀번호 */
+			,1 AS CNT      /* 카운트 */
+			,  DOMAIN_IDX || '_' || BRAND_IDX || '_' || FRANC_IDX AS IDX /*도메인 + 브랜드 + 가맹점 일련번호 */
+			,  DOMAIN_IDX	/*도메인 일련번호 */
+			,  BRAND_IDX	/*브랜드 일련번호 */
+			,  FRANC_IDX	/*가맹점 일련번호 */
+			, '' AS  deviceIdx	/*장치 일련번호 */
+			,  ACTIVE_YN		/*활성화여부 */
+			, '' AS  orderSeq		/*정렬순서 */
+			,  reg_User			/*등록자 */
+			,  reg_Date			/*등록일 */
+			,  mod_User			/*수정자 */
+			,  mod_Date			/*수정일 */
+			, '' AS caseString
+			, '' AS  rowCount
+			, '' AS  serchKey
+			, '' AS  sendUrl
+		FROM USERS
+		WHERE ID = #{id}
+		AND IFNULL(DEL_YN, 'N') = 'N'
+	</select>
+
+	<select id="Login_GetBrnActiveCheck" parameterType="hashmap"  resultType="qss.vo.IndexVo">
+	/*
+	  ID  : index_sql.Login_GetBrnActiveCheck
+	  DEC : 사용자의 브랜드 활성화 체크
+	*/
+		SELECT
+			ACTIVE_YN
+		FROM BRAND
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+	</select>
+
+
+		<select id="Login_GetFrnActiveCheck" parameterType="hashmap"  resultType="qss.vo.IndexVo">
+	/*
+	  ID  : index_sql.Login_GetFrnActiveCheck
+	  DEC : 사용자의  가맹점 활성화 체크
+	*/
+		SELECT
+			ACTIVE_YN
+		FROM FRANCHISEE
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx}
+	</select>
+	
+	<update id="Login_SetPwdFailCnt" parameterType="hashmap" >
+		/*
+		  ID  : index_sql.Login_SetPwdFailCnt
+		  DEC : 사용자의  비밀번호 실패 횟수 수정
+		*/
+		UPDATE USERS SET PASSWORD_FAIL_COUNT = #{cnt}
+		WHERE ID = #{id}
+	</update>
+
+
+	<select id="Login_GetSession" statementType="CALLABLE" parameterType="qss.vo.IndexVo" resultType="qss.vo.IndexVo">
+		{
+			CALL Login_GetSession(#{MR_ID})
+		}
+	</select>
+	<update id="Login_SetPwd" statementType="CALLABLE" parameterType="hashmap" flushCache="true">
+		{ CALL Index_Package.Login_SetPwd
+			(
+				#{IDX, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer},
+				#{ID, mode=IN, jdbcType=VARCHAR, javaType=string},
+				#{OLD_PWD, mode=IN, jdbcType=VARCHAR, javaType=string},
+				#{NEW_PWD, mode=IN, jdbcType=VARCHAR, javaType=string},
+				#{result, mode=OUT, jdbcType=CURSOR, javaType=java.sql.ResultSet, resultMap=IndexResult}
+			)
+		}
+	</update>
+	
+</mapper>

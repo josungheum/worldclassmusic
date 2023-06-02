@@ -1,0 +1,1285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Calculate">
+	<resultMap type="qss.vo.CalculateVo" id="CalculateVo" />
+	<resultMap type="qss.vo.OrderMasterVo" id="OrderMasterVo" />
+
+	<select id="Calculate_List" parameterType="qss.vo.CalculateVo" resultType="qss.vo.CalculateVo">
+	/*
+	ID  : calculate_sql.Calculate_List
+	DEC :  정산내역 리스트 조회
+	*/
+	<include refid="Common.BeforeSQL"/>
+		<!-- 시스템 관라지 일경우 -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+			SELECT 	KS.DOMAIN_IDX          /*도메인일련번호*/
+					,KS.BRAND_IDX           /*브랜드일련번호*/
+					,KS.FRANC_IDX           /*가맹점일련번호*/
+					,KS.DEVICE_IDX          /*단말일련번호*/
+					,CASE
+						WHEN KS.DEL_YN = 'Y'
+						THEN CONCAT('(삭제단말)', KS.DEVICE_NAME)
+						ELSE KS.DEVICE_NAME
+					END AS DEVICE_NAME /*단말명*/
+					,FC.FRANC_NAME           /*가맹점명*/
+					,ifnull(CM.CALCULATE_DATE, 'N') AS CALCULATE_YN /*정산여부*/
+					,CM.CALCULATE_DATE  /*정산일*/
+					,CM.REG_USER            /*등록자*/
+					,CM.MOD_USER            /*수정자*/
+					,date_format(CM.REG_DATE, '%Y-%m-%d %H:%i:%s') AS REG_DATE		/*등록일*/
+					,date_format(CM.MOD_DATE, '%Y-%m-%d %H:%i:%s') AS MOD_DATE		/*수정일*/
+
+			FROM KIOSK KS
+		 	LEFT OUTER JOIN
+		    (
+		      SELECT DOMAIN_IDX
+		            ,BRAND_IDX
+		            ,FRANC_IDX
+		            ,DEVICE_IDX
+		            ,CALCULATE_DATE
+		            ,MOD_USER
+			        ,REG_USER
+			        ,REG_DATE
+			        ,MOD_DATE
+		      FROM   CALCULATE_MASTER
+		      WHERE  CALCULATE_DATE = #{calculateDate}
+		      GROUP BY DOMAIN_IDX
+		              ,BRAND_IDX
+		              ,FRANC_IDX
+		              ,DEVICE_IDX
+		              ,CALCULATE_DATE
+		              ,MOD_USER
+			          ,REG_USER
+			          ,REG_DATE
+			          ,MOD_DATE
+		     ) CM
+		     ON  CM.DOMAIN_IDX = #{domainIdx}
+		 	 AND KS.DOMAIN_IDX = CM.DOMAIN_IDX
+		 	 AND KS.BRAND_IDX = CM.BRAND_IDX
+		 	 AND KS.FRANC_IDX = CM.FRANC_IDX
+		 	 AND KS.DEVICE_IDX = CM.DEVICE_IDX
+		 	 INNER JOIN BRAND B
+			 	ON  B.DOMAIN_IDX = KS.DOMAIN_IDX
+			 	AND B.BRAND_IDX = KS.BRAND_IDX
+			 	AND ifnull(B.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN FRANCHISEE FC
+		 	 	ON KS.DOMAIN_IDX = FC.DOMAIN_IDX
+		 	 	AND KS.BRAND_IDX = FC.BRAND_IDX
+		 	 	AND KS.FRANC_IDX = FC.FRANC_IDX
+		 	 	AND ifnull(FC.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN
+			 (
+			    SELECT DOMAIN_IDX
+			          ,BRAND_IDX
+			          ,FRANC_IDX
+			          ,DEVICE_IDX
+			    FROM ORDER_MASTER
+			    GROUP BY DOMAIN_IDX
+			            ,BRAND_IDX
+			            ,FRANC_IDX
+			            ,DEVICE_IDX
+			 ) OM
+			 ON KS.DOMAIN_IDX = OM.DOMAIN_IDX
+			 AND KS.BRAND_IDX = OM.BRAND_IDX
+			 AND KS.FRANC_IDX = OM.FRANC_IDX
+			 AND KS.DEVICE_IDX = OM.DEVICE_IDX
+			 WHERE KS.DOMAIN_IDX = #{domainIdx}
+			 AND IFNULL(KS.DEL_YN, 'N') = 'N'
+			 <if test="brandIdx != null and brandIdx != '' and brandIdx != 0">
+				AND KS.BRAND_IDX = #{brandIdx}
+			 </if>
+			 <if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND KS.FRANC_IDX = #{francIdx}
+			 </if>
+			 AND
+				CASE
+					WHEN DATE(#{calculateDate}) != DATE(NOW())
+					THEN CM.CALCULATE_DATE IS NOT NULL
+					ELSE (CM.CALCULATE_DATE = #{calculateDate} OR CM.CALCULATE_DATE IS NULL)
+				END
+		</if>
+		<!-- 시스템 관라지가 아닐경우(브랜드, 매장 관리자) -->
+		 <if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+		 	SELECT 	KS.DOMAIN_IDX          /*도메인일련번호*/
+					,KS.BRAND_IDX           /*브랜드일련번호*/
+					,KS.FRANC_IDX           /*가맹점일련번호*/
+					,KS.DEVICE_IDX          /*단말일련번호*/
+					,CASE
+						WHEN KS.DEL_YN = 'Y'
+					 	THEN CONCAT('(삭제단말)', KS.DEVICE_NAME)
+					 	ELSE KS.DEVICE_NAME
+					 	END AS DEVICE_NAME /*단말명*/
+					,FC.FRANC_NAME           /*가맹점명*/
+					,ifnull(CM.CALCULATE_DATE, 'N') AS CALCULATE_YN /*정산여부*/
+					,CM.CALCULATE_DATE  /*정산일*/
+					,CM.REG_USER            /*등록자*/
+					,CM.MOD_USER            /*수정자*/
+					,date_format(CM.REG_DATE, '%Y-%m-%d %H:%i:%s') AS REG_DATE		/*등록일*/
+					,date_format(CM.MOD_DATE, '%Y-%m-%d %H:%i:%s') AS MOD_DATE		/*수정일*/
+
+			FROM KIOSK KS
+		 	LEFT OUTER JOIN
+		    (
+		      SELECT DOMAIN_IDX
+		            ,BRAND_IDX
+		            ,FRANC_IDX
+		            ,DEVICE_IDX
+		            ,CALCULATE_DATE
+		            ,MOD_USER
+			        ,REG_USER
+			        ,REG_DATE
+			        ,MOD_DATE
+		      FROM   CALCULATE_MASTER
+		      WHERE  CALCULATE_DATE = #{calculateDate}
+		      GROUP BY DOMAIN_IDX
+		              ,BRAND_IDX
+		              ,FRANC_IDX
+		              ,DEVICE_IDX
+		              ,CALCULATE_DATE
+		              ,MOD_USER
+			          ,REG_USER
+			          ,REG_DATE
+			          ,MOD_DATE
+		     ) CM
+		     ON CM.DOMAIN_IDX = #{domainIdx}
+		 	 AND KS.DOMAIN_IDX = CM.DOMAIN_IDX
+		 	 AND KS.BRAND_IDX = CM.BRAND_IDX
+		 	 AND KS.FRANC_IDX = CM.FRANC_IDX
+		 	 AND KS.DEVICE_IDX = CM.DEVICE_IDX
+		 	 INNER JOIN BRAND B
+			 ON  B.DOMAIN_IDX = KS.DOMAIN_IDX
+			 AND B.BRAND_IDX = KS.BRAND_IDX
+			 AND ifnull(B.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN FRANCHISEE FC
+		 	 ON KS.DOMAIN_IDX = FC.DOMAIN_IDX
+		 	 AND KS.BRAND_IDX = FC.BRAND_IDX
+		 	 AND KS.FRANC_IDX = FC.FRANC_IDX
+		 	 AND ifnull(FC.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN
+			 (
+			    SELECT DOMAIN_IDX
+			          ,BRAND_IDX
+			          ,FRANC_IDX
+			          ,DEVICE_IDX
+			    FROM ORDER_MASTER
+			    GROUP BY DOMAIN_IDX
+			            ,BRAND_IDX
+			            ,FRANC_IDX
+			            ,DEVICE_IDX
+			 ) OM
+			 ON KS.DOMAIN_IDX = OM.DOMAIN_IDX
+			 AND KS.BRAND_IDX = OM.BRAND_IDX
+			 AND KS.FRANC_IDX = OM.FRANC_IDX
+			 AND KS.DEVICE_IDX = OM.DEVICE_IDX
+		 	 WHERE KS.DOMAIN_IDX = #{domainIdx}
+			 AND IFNULL(KS.DEL_YN, 'N') = 'N'
+			/* 브랜드 관리자는 해당 브랜드에 포함된 모든 매장 포함되게 또는 선택한 매자만 */
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+				AND KS.BRAND_IDX = #{sessionBrandIdx}
+			</if>
+			<if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND KS.FRANC_IDX = #{francIdx}
+			</if>
+
+			/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+				AND KS.BRAND_IDX = #{sessionBrandIdx}
+				AND KS.FRANC_IDX = #{sessionFrancIdx}
+			</if>
+			AND
+				CASE
+					WHEN DATE(#{calculateDate}) != DATE(NOW())
+					THEN CM.CALCULATE_DATE IS NOT NULL
+					ELSE (CM.CALCULATE_DATE = #{calculateDate} OR CM.CALCULATE_DATE IS NULL)
+				END
+
+
+		 </if>
+		 <if test="sSortName == null or sSortName == ''">
+<!-- 		 order BY FC.FRANC_NAME -->
+		 </if>
+		<include refid="Common.AfterSQL"/>
+	</select>
+
+
+
+	<select id="Calculate_ListCnt" parameterType="qss.vo.CalculateVo" resultType="int">
+		/*
+		  ID  : calculate_sql.Calculate_ListCnt
+		  DEC : 정산 Cnt 조회
+		*/
+		<!-- 시스템 관라지 일경우 -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+		 	SELECT COUNT(1)
+		 	FROM KIOSK KS
+		 	LEFT OUTER JOIN
+		    (
+		      SELECT DOMAIN_IDX
+		            ,BRAND_IDX
+		            ,FRANC_IDX
+		            ,DEVICE_IDX
+		            ,CALCULATE_DATE
+		            ,MOD_USER
+			        ,REG_USER
+			        ,REG_DATE
+			        ,MOD_DATE
+		      FROM   CALCULATE_MASTER
+		      WHERE  CALCULATE_DATE = #{calculateDate}
+		      GROUP BY DOMAIN_IDX
+		              ,BRAND_IDX
+		              ,FRANC_IDX
+		              ,DEVICE_IDX
+		              ,CALCULATE_DATE
+		              ,MOD_USER
+			          ,REG_USER
+			          ,REG_DATE
+			          ,MOD_DATE
+		     ) CM
+		     ON CM.DOMAIN_IDX = #{domainIdx}
+		 	 AND KS.DOMAIN_IDX = CM.DOMAIN_IDX
+		 	 AND KS.BRAND_IDX = CM.BRAND_IDX
+		 	 AND KS.FRANC_IDX = CM.FRANC_IDX
+		 	 AND KS.DEVICE_IDX = CM.DEVICE_IDX
+		 	 INNER JOIN BRAND B
+			 ON  B.DOMAIN_IDX = KS.DOMAIN_IDX
+			 AND B.BRAND_IDX = KS.BRAND_IDX
+			 AND ifnull(B.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN FRANCHISEE FC
+		 	 ON KS.DOMAIN_IDX = FC.DOMAIN_IDX
+		 	 AND KS.BRAND_IDX = FC.BRAND_IDX
+		 	 AND KS.FRANC_IDX = FC.FRANC_IDX
+		 	 AND ifnull(FC.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN
+			 (
+			    SELECT DOMAIN_IDX
+			          ,BRAND_IDX
+			          ,FRANC_IDX
+			          ,DEVICE_IDX
+			    FROM ORDER_MASTER
+			    GROUP BY DOMAIN_IDX
+			            ,BRAND_IDX
+			            ,FRANC_IDX
+			            ,DEVICE_IDX
+			 ) OM
+			 ON KS.DOMAIN_IDX = OM.DOMAIN_IDX
+			 AND KS.BRAND_IDX = OM.BRAND_IDX
+			 AND KS.FRANC_IDX = OM.FRANC_IDX
+			 AND KS.DEVICE_IDX = OM.DEVICE_IDX
+
+			 WHERE KS.DOMAIN_IDX = #{domainIdx}
+			 AND IFNULL(KS.DEL_YN, 'N') = 'N'
+			 <if test="brandIdx != null and brandIdx != '' and brandIdx != 0">
+				AND KS.BRAND_IDX = #{brandIdx}
+			 </if>
+			 <if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND KS.FRANC_IDX = #{francIdx}
+			 </if>
+			 AND
+				CASE
+					WHEN DATE(#{calculateDate}) != DATE(NOW())
+					THEN CM.CALCULATE_DATE IS NOT NULL
+					ELSE (CM.CALCULATE_DATE = #{calculateDate} OR CM.CALCULATE_DATE IS NULL)
+				END
+
+
+		</if>
+		<!-- 시스템 관라지가 아닐경우(브랜드, 매장 관리자) -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+			SELECT COUNT(1)
+		 	FROM KIOSK KS
+		 	LEFT OUTER JOIN
+		    (
+		      SELECT DOMAIN_IDX
+		            ,BRAND_IDX
+		            ,FRANC_IDX
+		            ,DEVICE_IDX
+		            ,CALCULATE_DATE
+		            ,MOD_USER
+			        ,REG_USER
+			        ,REG_DATE
+			        ,MOD_DATE
+		      FROM   CALCULATE_MASTER
+		      WHERE  CALCULATE_DATE = #{calculateDate}
+		      GROUP BY DOMAIN_IDX
+		              ,BRAND_IDX
+		              ,FRANC_IDX
+		              ,DEVICE_IDX
+		              ,CALCULATE_DATE
+		              ,MOD_USER
+			          ,REG_USER
+			          ,REG_DATE
+			          ,MOD_DATE
+		     ) CM
+		     ON CM.DOMAIN_IDX = #{domainIdx}
+		 	 AND KS.DOMAIN_IDX = CM.DOMAIN_IDX
+		 	 AND KS.BRAND_IDX = CM.BRAND_IDX
+		 	 AND KS.FRANC_IDX = CM.FRANC_IDX
+		 	 AND KS.DEVICE_IDX = CM.DEVICE_IDX
+		 	 INNER JOIN BRAND B
+			 ON  B.DOMAIN_IDX = KS.DOMAIN_IDX
+			 AND B.BRAND_IDX = KS.BRAND_IDX
+			 AND ifnull(B.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN FRANCHISEE FC
+		 	 ON KS.DOMAIN_IDX = FC.DOMAIN_IDX
+		 	 AND KS.BRAND_IDX = FC.BRAND_IDX
+		 	 AND KS.FRANC_IDX = FC.FRANC_IDX
+		 	 AND ifnull(FC.DEL_YN, 'N') = 'N'
+		 	 INNER JOIN
+			 (
+			    SELECT DOMAIN_IDX
+			          ,BRAND_IDX
+			          ,FRANC_IDX
+			          ,DEVICE_IDX
+			    FROM ORDER_MASTER
+			    GROUP BY DOMAIN_IDX
+			            ,BRAND_IDX
+			            ,FRANC_IDX
+			            ,DEVICE_IDX
+			 ) OM
+			 ON KS.DOMAIN_IDX = OM.DOMAIN_IDX
+			 AND KS.BRAND_IDX = OM.BRAND_IDX
+			 AND KS.FRANC_IDX = OM.FRANC_IDX
+			 AND KS.DEVICE_IDX = OM.DEVICE_IDX
+			 WHERE KS.DOMAIN_IDX = #{domainIdx}
+			 AND IFNULL(KS.DEL_YN, 'N') = 'N'
+			 /* 브랜드 관리자는 해당 브랜드에 포함된 모든 매장 포함되게 또는 선택한 매자만 */
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+				AND KS.BRAND_IDX = #{sessionBrandIdx}
+			</if>
+			<if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND KS.FRANC_IDX = #{francIdx}
+			</if>
+
+			/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+				AND KS.BRAND_IDX = #{sessionBrandIdx}
+				AND KS.FRANC_IDX = #{sessionFrancIdx}
+			</if>
+			 AND
+				CASE
+					WHEN DATE(#{calculateDate}) != DATE(NOW())
+					THEN CM.CALCULATE_DATE IS NOT NULL
+					ELSE (CM.CALCULATE_DATE = #{calculateDate} OR CM.CALCULATE_DATE IS NULL)
+				END
+
+
+		</if>
+	</select>
+
+	<select id="Calculate_Detail" parameterType="qss.vo.CalculateVo" resultType="qss.vo.CalculateVo">
+	/*
+	ID  : calculate_sql.Calculate_Detail
+	DEC :  정산내역 상세보기(주문낸역)
+	*/
+			SELECT
+				DOMAIN_IDX		/*도메인일련번호*/
+				,BRAND_IDX		/*브랜드일련번호*/
+				,FRANC_IDX		/*가맹점일련번호*/
+				,DEVICE_IDX		/*단말일련번호*/
+				,#{calculateDate} AS CALCULATE_DATE
+		        ,ITEM_TYPE
+		        ,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'TRD0000' AND CODE_VALUE = ITEM_TYPE AND IFNULL(DEL_YN, 'N') = 'N') AS ITEM_TYPE_NAME  /*거래구분*/
+		        ,0 AS ITEM_MOUNT
+				,0 AS ITEM_COUNT
+				,
+				 CASE
+				 WHEN ITEM_TYPE = 'TRD0005'  /*적립*/
+				    THEN SUM(POINT_SAVE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0006'  /*카드결제*/
+				    THEN SUM(CARD_AMT)
+				  WHEN ITEM_TYPE = 'TRD0004'  /*포인트결제*/
+				    THEN SUM(POINT_USE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0001'  /*구매*/
+				    THEN SUM(ORDER_AMT)
+				  WHEN ITEM_TYPE = 'TRD0002'  /*결제*/
+				    THEN SUM(PAY_AMT)
+				  WHEN ITEM_TYPE = 'TRD0003'  /*할인*/
+				    THEN SUM(DISC_AMT)
+				  ELSE 0
+				 END AS ITEM_AF_MOUNT
+				,SUM(ITEM_COUNT) AS ITEM_AF_COUNT
+				FROM
+				(
+				   SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0006' AS ITEM_TYPE  /*거래구분(카드결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,SUM(OM.CARD_AMT)		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+						OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0001', 'PAY0002', 'PAY0003', 'PAY0004', 'PAY0005') /*카드, 삼성페이, SSG페이, 카카오페이, 복합결제*/
+		        		<![CDATA[
+		        		AND OM.CARD_AMT > 0
+		        		AND OM.ORDER_DATE <= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0004' AS ITEM_TYPE  /*거래구분(포인트결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,SUM(OM.POINT_USE_AMT)	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				    	    ,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0005', 'PAY0006') /*복합결제, 포인트결제*/
+		        		<![CDATA[
+		        		AND OM.POINT_USE_AMT > 0
+		        		AND OM.ORDER_DATE	<=  #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				UNION ALL
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+				          	,'TRD0005' AS ITEM_TYPE  /*거래구분(적립)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,SUM(OM.PAY_AMT)	AS PAY_AMT
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.POINT_SAVE_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0002' AS ITEM_TYPE  /*거래구분(결제)*/
+				        	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		AS ORDER_AMT		           /*구매액*/
+							,0		AS DISC_AMT 	              /*할인액*/
+						  	,SUM(OM.PAY_AMT)	AS PAY_AMT			            /*결제액*/
+					        ,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+					        ,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.PAY_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0001' AS ITEM_TYPE  /*거래구분(결제구매)*/
+						    ,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,0	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+							,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.ORDER_AMT > 0
+						AND OM.ORDER_DATE <= #{calculateDate}
+						]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+		                 	,'TRD0003' AS ITEM_TYPE  /*거래구분(할인)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				         	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+					<![CDATA[
+					AND OM.DISC_AMT > 0
+		        	AND OM.ORDER_DATE <= #{calculateDate}
+		        	]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				) A
+				GROUP BY ITEM_TYPE
+	</select>
+
+	<select id="Calculate_DetailUpdate" parameterType="qss.vo.CalculateVo" resultType="qss.vo.CalculateVo">
+	/*
+	ID  : calculate_sql.Calculate_DetailUpdate
+	DEC :  정산내역 상세보기(주문내역)
+	*/
+			SELECT
+				DOMAIN_IDX		/*도메인일련번호*/
+				,BRAND_IDX		/*브랜드일련번호*/
+				,FRANC_IDX		/*가맹점일련번호*/
+				,DEVICE_IDX		/*단말일련번호*/
+				,#{calculateDate} AS CALCULATE_DATE
+		        ,ITEM_TYPE
+		        ,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'TRD0000' AND CODE_VALUE = ITEM_TYPE AND IFNULL(DEL_YN, 'N') = 'N') AS ITEM_TYPE_NAME  /*거래구분*/
+		        ,0 AS ITEM_MOUNT
+				,0 AS ITEM_COUNT
+				,
+				 CASE
+				 WHEN ITEM_TYPE = 'TRD0005'  /*적립*/
+				    THEN SUM(POINT_SAVE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0006'  /*카드결제*/
+				    THEN SUM(CARD_AMT)
+				  WHEN ITEM_TYPE = 'TRD0004'  /*포인트결제*/
+				    THEN SUM(POINT_USE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0001'  /*구매*/
+				    THEN SUM(ORDER_AMT)
+				  WHEN ITEM_TYPE = 'TRD0002'  /*결제*/
+				    THEN SUM(PAY_AMT)
+				  WHEN ITEM_TYPE = 'TRD0003'  /*할인*/
+				    THEN SUM(DISC_AMT)
+				  ELSE 0
+				 END AS ITEM_AF_MOUNT
+				,SUM(ITEM_COUNT) AS ITEM_AF_COUNT
+				FROM
+				(
+				   SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0006' AS ITEM_TYPE  /*거래구분(카드결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,SUM(OM.CARD_AMT)		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+						OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0001', 'PAY0002', 'PAY0003', 'PAY0004', 'PAY0005') /*카드, 삼성페이, SSG페이, 카카오페이, 복합결제*/
+		        		<![CDATA[
+		        		AND OM.CARD_AMT > 0
+		        		AND OM.ORDER_DATE <= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0004' AS ITEM_TYPE  /*거래구분(포인트결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,SUM(OM.POINT_USE_AMT)	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				    	    ,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0005', 'PAY0006') /*복합결제, 포인트결제*/
+		        		<![CDATA[
+		        		AND OM.POINT_USE_AMT > 0
+		        		AND OM.ORDER_DATE	<=  #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				UNION ALL
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+				          	,'TRD0005' AS ITEM_TYPE  /*거래구분(적립)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,SUM(OM.PAY_AMT)	AS PAY_AMT			            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.POINT_SAVE_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0002' AS ITEM_TYPE  /*거래구분(결제)*/
+				        	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		AS ORDER_AMT		           /*구매액*/
+							,0		AS DISC_AMT 	              /*할인액*/
+						  	,SUM(OM.PAY_AMT)	AS PAY_AMT			            /*결제액*/
+					        ,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+					        ,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.PAY_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0001' AS ITEM_TYPE  /*거래구분(결제구매)*/
+						    ,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,0	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+							,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.ORDER_AMT > 0
+						AND OM.ORDER_DATE <= #{calculateDate}
+						]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+		                 	,'TRD0003' AS ITEM_TYPE  /*거래구분(할인)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				         	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+					<![CDATA[
+					AND OM.DISC_AMT > 0
+		        	AND OM.ORDER_DATE <= #{calculateDate}
+		        	]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				) A
+				GROUP BY ITEM_TYPE;
+
+			/*ORDER_MASTER 정산여부 처리*/
+			UPDATE  ORDER_MASTER
+		    SET     CALCULATE_DATE = #{calculateDate},
+		    		CALCULATE_YN   = 'Y',
+		            MOD_USER = #{modUser},
+		            MOD_DATE = NOW()
+		    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx} AND DEVICE_IDX  = #{deviceIdx}
+		    		AND ifnull(CALCULATE_YN, 'N') = 'N';
+	</select>
+
+	<select id="ReCalculate_Detail" parameterType="qss.vo.CalculateVo" resultType="qss.vo.CalculateVo">
+		/*
+		ID  : calculate_sql.ReCalculate_Detail
+		DEC :  정산내역 상세보기(주문낸역)
+		*/
+			SELECT
+			        DOMAIN_IDX		/*도메인일련번호*/
+					,BRAND_IDX		/*브랜드일련번호*/
+					,FRANC_IDX		/*가맹점일련번호*/
+					,DEVICE_IDX		/*단말일련번호*/
+					,CALCULATE_DATE
+			        ,ITEM_TYPE
+					,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'TRD0000' AND CODE_VALUE = ITEM_TYPE AND IFNULL(DEL_YN, 'N') = 'N') AS ITEM_TYPE_NAME  /*거래구분*/
+					,SUM(ITEM_MOUNT) AS ITEM_MOUNT
+					,SUM(ITEM_COUNT) AS ITEM_COUNT
+			        ,SUM(ITEM_AF_MOUNT) AS ITEM_AF_MOUNT
+					,SUM(ITEM_AF_COUNT) AS ITEM_AF_COUNT
+			FROM (
+				SELECT
+			        DOMAIN_IDX		/*도메인일련번호*/
+					,BRAND_IDX		/*브랜드일련번호*/
+					,FRANC_IDX		/*가맹점일련번호*/
+					,DEVICE_IDX		/*단말일련번호*/
+					,#{calculateDate} AS CALCULATE_DATE
+			        ,ITEM_TYPE
+					,ITEM_MOUNT
+					,ITEM_COUNT
+			        ,0 AS ITEM_AF_MOUNT
+							,0 AS ITEM_AF_COUNT
+			FROM CALCULATE_MASTER
+			WHERE
+			DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx} AND DEVICE_IDX  = #{deviceIdx}
+			AND CALCULATE_DATE <![CDATA[=]]> #{calculateDate}
+
+			UNION ALL
+
+			SELECT
+				DOMAIN_IDX		/*도메인일련번호*/
+				,BRAND_IDX		/*브랜드일련번호*/
+				,FRANC_IDX		/*가맹점일련번호*/
+				,DEVICE_IDX		/*단말일련번호*/
+				,#{calculateDate} AS CALCULATE_DATE
+		        ,ITEM_TYPE
+		        ,0 AS ITEM_MOUNT
+				,0 AS ITEM_COUNT
+				,
+				 CASE
+				 WHEN ITEM_TYPE = 'TRD0005'  /*적립*/
+				    THEN SUM(POINT_SAVE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0006'  /*카드결제*/
+				    THEN SUM(CARD_AMT)
+				  WHEN ITEM_TYPE = 'TRD0004'  /*포인트결제*/
+				    THEN SUM(POINT_USE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0001'  /*구매*/
+				    THEN SUM(ORDER_AMT)
+				  WHEN ITEM_TYPE = 'TRD0002'  /*결제*/
+				    THEN SUM(PAY_AMT)
+				  WHEN ITEM_TYPE = 'TRD0003'  /*할인*/
+				    THEN SUM(DISC_AMT)
+				  ELSE 0
+				 END AS ITEM_AF_MOUNT
+				,SUM(ITEM_COUNT) AS ITEM_AF_COUNT
+				FROM
+				(
+				   SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0006' AS ITEM_TYPE  /*거래구분(카드결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,SUM(OM.CARD_AMT)		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+						OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0001', 'PAY0002', 'PAY0003', 'PAY0004', 'PAY0005') /*카드, 삼성페이, SSG페이, 카카오페이, 복합결제*/
+		        		<![CDATA[
+		        		AND OM.CARD_AMT > 0
+		        		AND OM.ORDER_DATE <= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0004' AS ITEM_TYPE  /*거래구분(포인트결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,SUM(OM.POINT_USE_AMT)	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				    	    ,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0005', 'PAY0006') /*복합결제, 포인트결제*/
+		        		<![CDATA[
+		        		AND OM.POINT_USE_AMT > 0
+		        		AND OM.ORDER_DATE	<=  #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				UNION ALL
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+				          	,'TRD0005' AS ITEM_TYPE  /*거래구분(적립)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,SUM(OM.PAY_AMT)	AS PAY_AMT			            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.POINT_SAVE_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0002' AS ITEM_TYPE  /*거래구분(결제)*/
+				        	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		AS ORDER_AMT		           /*구매액*/
+							,0		AS DISC_AMT 	              /*할인액*/
+						  	,SUM(OM.PAY_AMT)	AS PAY_AMT			            /*결제액*/
+					        ,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+					        ,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.PAY_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0001' AS ITEM_TYPE  /*거래구분(결제구매)*/
+						    ,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,0	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+							,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.ORDER_AMT > 0
+						AND OM.ORDER_DATE <= #{calculateDate}
+						]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+		                 	,'TRD0003' AS ITEM_TYPE  /*거래구분(할인)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				         	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+					<![CDATA[
+					AND OM.DISC_AMT > 0
+		        	AND OM.ORDER_DATE <= #{calculateDate}
+		        	]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				) A
+				GROUP BY ITEM_TYPE
+			) T
+			GROUP BY ITEM_TYPE
+			ORDER BY ITEM_TYPE
+
+	</select>
+
+	<select id="ReCalculate_DetailUpdate" parameterType="qss.vo.CalculateVo" resultType="qss.vo.CalculateVo">
+		/*
+		ID  : calculate_sql.ReCalculate_DetailUpdate
+		DEC :  정산내역 상세보기(주문내역)
+		*/
+			SELECT
+			        DOMAIN_IDX		/*도메인일련번호*/
+					,BRAND_IDX		/*브랜드일련번호*/
+					,FRANC_IDX		/*가맹점일련번호*/
+					,DEVICE_IDX		/*단말일련번호*/
+					,CALCULATE_DATE
+			        ,ITEM_TYPE
+					,(SELECT CODE_NAME FROM SYSTEM_CODE WHERE CODE_GROUP = 'TRD0000' AND CODE_VALUE = ITEM_TYPE AND IFNULL(DEL_YN, 'N') = 'N') AS ITEM_TYPE_NAME  /*거래구분*/
+					,SUM(ITEM_MOUNT) AS ITEM_MOUNT
+					,SUM(ITEM_COUNT) AS ITEM_COUNT
+			        ,SUM(ITEM_AF_MOUNT) AS ITEM_AF_MOUNT
+					,SUM(ITEM_AF_COUNT) AS ITEM_AF_COUNT
+			FROM (
+				SELECT
+			        DOMAIN_IDX		/*도메인일련번호*/
+					,BRAND_IDX		/*브랜드일련번호*/
+					,FRANC_IDX		/*가맹점일련번호*/
+					,DEVICE_IDX		/*단말일련번호*/
+					,#{calculateDate} AS CALCULATE_DATE
+			        ,ITEM_TYPE
+					,ITEM_MOUNT
+					,ITEM_COUNT
+			        ,0 AS ITEM_AF_MOUNT
+							,0 AS ITEM_AF_COUNT
+			FROM CALCULATE_MASTER
+			WHERE
+			DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx} AND DEVICE_IDX  = #{deviceIdx}
+			AND CALCULATE_DATE <![CDATA[=]]> #{calculateDate}
+
+			UNION ALL
+
+			SELECT
+				DOMAIN_IDX		/*도메인일련번호*/
+				,BRAND_IDX		/*브랜드일련번호*/
+				,FRANC_IDX		/*가맹점일련번호*/
+				,DEVICE_IDX		/*단말일련번호*/
+				,#{calculateDate} AS CALCULATE_DATE
+		        ,ITEM_TYPE
+		        ,0 AS ITEM_MOUNT
+				,0 AS ITEM_COUNT
+				,
+				 CASE
+				 WHEN ITEM_TYPE = 'TRD0005'  /*적립*/
+				    THEN SUM(POINT_SAVE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0006'  /*카드결제*/
+				    THEN SUM(CARD_AMT)
+				  WHEN ITEM_TYPE = 'TRD0004'  /*포인트결제*/
+				    THEN SUM(POINT_USE_AMT)
+				  WHEN ITEM_TYPE = 'TRD0001'  /*구매*/
+				    THEN SUM(ORDER_AMT)
+				  WHEN ITEM_TYPE = 'TRD0002'  /*결제*/
+				    THEN SUM(PAY_AMT)
+				  WHEN ITEM_TYPE = 'TRD0003'  /*할인*/
+				    THEN SUM(DISC_AMT)
+				  ELSE 0
+				 END AS ITEM_AF_MOUNT
+				,SUM(ITEM_COUNT) AS ITEM_AF_COUNT
+				FROM
+				(
+				   SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0006' AS ITEM_TYPE  /*거래구분(카드결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,SUM(OM.CARD_AMT)		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+						OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0001', 'PAY0002', 'PAY0003', 'PAY0004', 'PAY0005') /*카드, 삼성페이, SSG페이, 카카오페이, 복합결제*/
+		        		<![CDATA[
+		        		AND OM.CARD_AMT > 0
+		        		AND OM.ORDER_DATE <= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+                  			,'TRD0004' AS ITEM_TYPE  /*거래구분(포인트결제)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		 AS ORDER_AMT          /*구매액*/
+							,0 	   AS DISC_AMT            /*할인액*/
+							,0		 AS PAY_AMT	            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,SUM(OM.POINT_USE_AMT)	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				    	    ,0	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+		        		AND OM.PAY_TYPE IN ('PAY0005', 'PAY0006') /*복합결제, 포인트결제*/
+		        		<![CDATA[
+		        		AND OM.POINT_USE_AMT > 0
+		        		AND OM.ORDER_DATE	<=  #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				UNION ALL
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+				          	,'TRD0005' AS ITEM_TYPE  /*거래구분(적립)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,SUM(OM.PAY_AMT)	AS PAY_AMT			            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.POINT_SAVE_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0002' AS ITEM_TYPE  /*거래구분(결제)*/
+				        	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0		AS ORDER_AMT		           /*구매액*/
+							,0		AS DISC_AMT 	              /*할인액*/
+						  	,SUM(OM.PAY_AMT)	AS PAY_AMT			            /*결제액*/
+					        ,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+					        ,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.PAY_AMT > 0
+		        		AND OM.ORDER_DATE	<= #{calculateDate}
+		        		]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+	                 		,'TRD0001' AS ITEM_TYPE  /*거래구분(결제구매)*/
+						    ,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,SUM(OM.ORDER_AMT)	AS ORDER_AMT		           /*구매액*/
+							,0	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+							,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				          	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+						<![CDATA[
+						AND OM.ORDER_AMT > 0
+						AND OM.ORDER_DATE <= #{calculateDate}
+						]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+
+				UNION ALL
+
+					SELECT OM.DOMAIN_IDX		/*도메인일련번호*/
+							,OM.BRAND_IDX		/*브랜드일련번호*/
+							,OM.FRANC_IDX		/*가맹점일련번호*/
+							,OM.DEVICE_IDX		/*단말일련번호*/
+		                 	,'TRD0003' AS ITEM_TYPE  /*거래구분(할인)*/
+				          	,COUNT(ORDER_MASTER_IDX) AS ITEM_COUNT            /*건수*/
+							,0	AS ORDER_AMT		           /*구매액*/
+							,SUM(OM.DISC_AMT)	AS DISC_AMT 	              /*할인액*/
+							,0	AS PAY_AMT			            /*결제액*/
+				          	,0		AS CARD_AMT		            /*카드사용금액*/
+							,0	AS POINT_USE_AMT		  /*포인트 사용금액*/
+				         	,SUM(OM.POINT_SAVE_AMT)	AS POINT_SAVE_AMT	    /*포인트 적립금액*/
+					FROM ORDER_MASTER OM
+					WHERE
+					OM.DOMAIN_IDX = #{domainIdx} AND OM.BRAND_IDX = #{brandIdx} AND OM.FRANC_IDX = #{francIdx}
+						/* 정산을 위한 디바이스 + 정산여부 N + 주문완료건 */
+						AND OM.DEVICE_IDX  = #{deviceIdx} AND ifnull(OM.CALCULATE_YN, 'N') = 'N' AND OM.PAY_PROC_CODE = 'ORD0002'
+					<![CDATA[
+					AND OM.DISC_AMT > 0
+		        	AND OM.ORDER_DATE <= #{calculateDate}
+		        	]]>
+					GROUP BY OM.DOMAIN_IDX, OM.BRAND_IDX, OM.FRANC_IDX
+				) A
+				GROUP BY ITEM_TYPE
+			) T
+			GROUP BY ITEM_TYPE
+			ORDER BY ITEM_TYPE;
+
+			/*ORDER_MASTER 정산여부 처리*/
+			UPDATE  ORDER_MASTER
+		    SET     CALCULATE_DATE = #{calculateDate},
+		    		CALCULATE_YN   = 'Y',
+		            MOD_USER = #{modUser},
+		            MOD_DATE = NOW()
+		    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx} AND DEVICE_IDX  = #{deviceIdx}
+		    		AND ifnull(CALCULATE_YN, 'N') = 'N';
+
+	</select>
+
+	<insert id="Calculate_InsertCalculate" parameterType="java.util.List">
+		/*
+		ID : calculate_sql.Calculate_InsertCalculate
+		DEC : 정산 처리
+		*/
+			INSERT INTO CALCULATE_MASTER
+			(
+				DOMAIN_IDX,           /*도메인일련번호*/
+				BRAND_IDX,            /*브랜드일련번호*/
+				FRANC_IDX,            /*가맹점일련번호*/
+				DEVICE_IDX,           /*단말일련번호*/
+				CALCULATE_DATE,       /*정산일*/
+				ITEM_TYPE,            /*거래구분*/
+				ITEM_COUNT,           /*거래건수*/
+				ITEM_MOUNT,           /*금액*/
+				ITEM_AF_COUNT,        /*거래건수(변경)*/
+				ITEM_AF_MOUNT,        /*금액(변경)*/
+				REG_USER,
+	            REG_DATE,
+	            MOD_USER,
+	            MOD_DATE
+			)
+			VALUES
+			<foreach collection="list" item="item" separator=" , " >
+			(
+				#{item.domainIdx},           /*도메인일련번호*/
+				#{item.brandIdx},            /*브랜드일련번호*/
+				#{item.francIdx},            /*가맹점일련번호*/
+				#{item.deviceIdx},           /*단말일련번호*/
+				#{item.calculateDate},       /*정산일*/
+				#{item.itemType},            /*거래구분*/
+				#{item.itemAfCount},         /*거래건수*/
+				#{item.itemAfMount},         /*금액*/
+				0,         				 	/*거래건수(변경)*/
+				0,         				 	/*금액(변경)*/
+	            #{item.regUser},
+	            NOW(),
+	            #{item.modUser},
+	            NOW()
+			)
+			</foreach>
+			 ON DUPLICATE KEY
+			 UPDATE
+				ITEM_COUNT =  ITEM_COUNT + VALUES(ITEM_COUNT) + VALUES(ITEM_AF_COUNT), 	/*거래건수*/
+				ITEM_MOUNT =  ITEM_MOUNT + VALUES(ITEM_MOUNT),       					/*금액*/
+				MOD_USER =    VALUES(MOD_USER),       									/*변경자*/
+				MOD_DATE	= NOW()
+	</insert>
+
+
+	<insert id="Calculate_UpdateCalculate" parameterType="qss.vo.CalculateVo">
+		/*
+		ID : calculate_sql.Calculate_UpdateCalculate
+		DEC : 재정산 처리
+		*/
+		<![CDATA[
+			INSERT INTO MAIN_SCHEDULE
+				(
+					DOMAIN_IDX,
+					BRAND_IDX,
+					FRANC_IDX,
+					MAIN_SCHEDULE_IDX,
+					MAIN_SCHEDULE_NAME,
+					START_DATE,
+					END_DATE,
+					ACTIVE_YN,
+					DEL_YN,
+					REG_USER,
+		            REG_DATE,
+		            MOD_USER,
+		            MOD_DATE
+					)
+			VALUES
+				(
+					#{domainIdx},
+       			    #{brandIdx},
+       			    #{francIdx},
+       				#{mainScheduleIdx},
+					#{mainScheduleName},
+					#{startDate},
+		            #{endDate},
+		            #{activeYn},
+		            'N',
+		            #{regUser},
+		            NOW(),
+		            #{modUser},
+		            NOW()
+				)
+		]]>
+	</insert>
+</mapper>

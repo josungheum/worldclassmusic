@@ -1,0 +1,169 @@
+@CHARSET "UTF-8";
+
+/********************************************  ssgfTemplate Start ********************************************/
+.headDiv {
+	width: 100%;
+	border: 1px solid #BDBDBD;
+	height: 80px;
+}
+
+.scpropTemplateName {
+	width: 90%;
+	text-align: left;
+	padding-left: 5px;
+	font-size: 20px;
+}
+
+.lSideDiv {
+	width: 15%;
+	border: 1px solid #BDBDBD;
+	height: 500px;
+	display: inline-block;
+	overflow-y: scroll;
+	overflow-x: hidden;
+}
+
+.lEditorArea{
+	width: 50%;
+	height: 500px;
+	display: inline-block;
+	background-color: #E7E7E7;
+}
+
+.layoutEditorCanvas {
+	position: absolute;
+	margin-top: 5px;
+	background-color: #FFFFFF;
+}
+
+.contentList {
+	background: #f7fafc;
+	position: absolute;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	width:  434px;
+	border: 1px solid #bdbdbd;
+	display: inline-block;
+	height: 500px;
+}
+
+.comm {
+	position: relative;
+	background: #f7fafc;
+	border: 2px dotted #8c8c8c;
+	margin-left: 12px;
+	margin-top: 5px;
+	cursor: pointer;
+	width: 95%;
+}
+
+.ancDiv {
+	width: 100%;
+	height: 40%;
+	font-size: 20px;
+	text-align: center;
+	border-bottom: 2px dotted #8c8c8c;
+}
+
+.pIcon {
+	color: #d5d5d5;
+	font-size: 60px;
+	margin-left: 45%;
+	margin-top: 2px;
+}
+
+
+/********************************************  ssgfTemplate End  ********************************************/
+
+
+
+
+/******************************************** ssgfLayerTemplate Start ********************************************/
+.lEditorLayer {
+	text-align: center;
+	font: 1200px "Impact";
+	opacity : 0.8;
+}
+
+.layerContentItemList {
+	position: relative;
+	background: #f7fafc;
+	display: none;
+	width: 100%;
+	overflow-y: scroll;
+	overflow-x: hidden;
+}
+
+.lEditorLayerlistItem {
+	font-size: 20px;
+	text-align: center;
+	margin-bottom: 2px;
+	margin-left: 2px;
+}
+
+.lEditorLayerlistItemDel {
+	position: relative;
+	border: none;
+	color: #ffffff;
+	left: 57%;
+	top: -69px;
+	margin-left: -28px;
+	text-align: center;
+	background: #ffffff;
+	border-radius: 50%;
+	padding: -3px 0px 0px 0px;
+	font-size: 10px;
+	font-weight: normal;
+	background-image:url(/Content/images/details_close.png);
+}
+
+.contentItem {
+	margin: 5px 0px 5px 12px;
+	width: 95%;
+	border: 2px dotted #8c8c8c;
+	z-index:-1;
+}
+
+.contentItemImage {
+	display: inline-block;
+	width: 30%;
+	height: 100%;
+	border-right: 2px dotted #8c8c8c;
+}
+
+.sideDiv {
+	display: inline-block;
+	width: 70%;
+	height: 100%;
+}
+
+.contentItemDelete {
+	position: relative;
+	border: none;
+	color: #ffffff;
+	left: 97%;
+	top: -10px;
+	text-align: center;
+	background: #ffffff;
+	border-radius: 50%;
+	font-size: 10px;
+	font-weight: normal;
+	z-index:999;
+	background-image:url(/Content/images/details_close.png);
+}
+
+.playTime {
+	display: inline-block;
+	margin: 15px 0px 0px 10px;
+	font-weight: bold;
+	font-size: 20px;
+}
+
+.contentTimeInput {
+	width: 20%;
+	display: inline-block;
+	margin-left: 5%;
+	margin-right: 5%;
+	text-align: center;
+}
+/******************************************** ssgfLayerTemplate End ********************************************/

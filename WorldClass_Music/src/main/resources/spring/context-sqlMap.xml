@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:mybatis="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+	<!-- transaction -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+          <property name="dataSource" ref="dataSource-${Globals.DbType}" />
+    </bean>
+    
+    <!-- MyBatis setup -->
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionFactoryBean">
+    	<property name="dataSource" ref="dataSource-${Globals.DbType}" />
+    	<property name="configLocation" value="classpath:sqlmap/config/mybatis/mybatis-config.xml" />
+    	<property name="mapperLocations">
+    		<list>
+    			<value>classpath*:sqlmap/query/${Globals.DbType}/**/*.xml</value>
+    		</list>
+    	</property>
+    </bean>
+    
+    <!-- MyBatis setup -->
+    <bean id="sqlSessionTarget" class="org.mybatis.spring.SqlSessionFactoryBean">
+    	<property name="dataSource" ref="dataSource-${Globals.DbType}" />
+    	<property name="configLocation" value="classpath:sqlmap/config/mybatis/mybatis-config.xml" />
+    	<property name="mapperLocations">
+    		<list>
+    			<value>classpath*:sqlmap/query/target/**/*.xml</value>
+    		</list>
+    	</property>
+    </bean>
+    
+    <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+        <constructor-arg ref="sqlSession" />
+    </bean>
+			
+	<bean id="sqlSessionTemplateTarget" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+        <constructor-arg ref="sqlSessionTarget" />
+    </bean>
+</beans>

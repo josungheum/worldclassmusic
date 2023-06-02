@@ -1,0 +1,63 @@
+.onCircle {
+	width: 71px;
+	height: 71px;
+	border: 2px solid #0032FF;
+	border-radius: 60%;
+	margin-left: 10%;
+	margin-bottom:4px;
+}
+
+.onCircle2 {
+	margin: auto;
+	margin-top: 3%;
+	width: 63px;
+	height: 63px;
+	border: 5px solid #0032FF;
+	border-radius: 60%;
+}
+
+.onText {
+	color: #0032FF;
+	font-weight: bold;
+	font-size: 11px;
+	text-align:center;
+	margin-top: 35%;
+}
+
+.offCircle {
+	width: 71px;
+	height: 71px;
+	border: 2px solid #FF0000;
+	border-radius: 60%;
+	margin-left: 10%;
+	margin-bottom:4px;
+}
+
+.offCircle2 {
+	margin: auto;
+	margin-top: 3%;
+	width: 63px;
+	height: 63px;
+	border: 5px solid #FF0000;
+	border-radius: 60%;
+}
+
+.offText {
+	color: #FF0000;
+	font-weight: bold;
+	font-size: 11px;
+	text-align:center;
+	margin-top: 35%;
+}
+
+table.dataTable tbody tr.selected {
+  	background-color: #B0BED9;
+}
+
+.bootstrap-dialog-footer-buttons{
+		text-align: right;
+}
+
+.text-center{
+	padding:8px !important;
+}

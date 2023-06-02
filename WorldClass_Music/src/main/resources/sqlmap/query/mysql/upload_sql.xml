@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Upload">
+	<resultMap type="qss.vo.UploadVo" id="UploadVo" />
+	<insert id="File_Create" parameterType="hashmap">
+		/* 
+		  ID  : upload_sql.File_Create
+		  DEC : 파일 저장(공통)
+		*/
+		<selectKey resultType="string" keyProperty="fileContentIdx" order="BEFORE">
+	        SELECT  D.SEQ FROM(SELECT (SELECT ifnull(MAX(FILE_CONTENT_IDX) + 1, '1') FROM FILE_CONTENT) AS SEQ) AS D      
+	    </selectKey>    
+		INSERT INTO FILE_CONTENT
+		(
+		    FILE_CONTENT_IDX
+		  , FILE_NAME
+		  , FILE_SAVE_NAME
+		  , SAVE_PATH
+		  , THUMBNAIL_PATH
+		  , FILE_SIZE
+		  , CHECK_SUM
+		  , PLAY_TIME
+		  , REG_USER
+		  , REG_DATE
+		  , MOD_USER
+		  , MOD_DATE
+		  , CONT_TYPE
+		  , GROUP_IDX
+		)
+		VALUES 
+		(
+		    #{fileContentIdx}
+		  , #{fileName}
+		  , #{fileSaveName}
+		  , #{savePath}
+		  , #{thumbnailPath}
+		  , #{fileSize}
+		  , #{checkSum}
+		  , #{playTime}
+		  , #{regUser}
+		  , now()
+		  , #{regUser}
+		  , now()
+		  , #{contType}
+		  , #{groupIdx}
+		);
+				
+	</insert>
+	
+	<select id="File_getFileInfo"  parameterType="hashmap" resultMap="UploadVo">
+		SELECT 	FILE_CONTENT_IDX, FILE_NAME, SAVE_PATH, THUMBNAIL_PATH
+		FROM 	FILE_CONTENT
+		WHERE 	FILE_CONTENT_IDX = #{idx}
+	</select>
+	
+</mapper>

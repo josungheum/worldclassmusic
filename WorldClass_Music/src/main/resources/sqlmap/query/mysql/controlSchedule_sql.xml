@@ -1,0 +1,570 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ControlSchedule">
+	<resultMap type="qss.vo.ControlScheduleVo" id="ScheduleVo" />
+	<resultMap type="qss.vo.TreeVo" id="TreeVo" />
+	<resultMap type="qss.vo.ScheduleScreenVo" id="ScheduleScreenVo" />
+	<resultMap type="qss.vo.ScreenVo" id="ScreenVo" />
+	<resultMap type="hashmap" id="resultMap">
+		<result column="SM_PINDEX" javaType="string" jdbcType="VARCHAR" property="SM_PINDEX"/>
+	</resultMap>
+
+	
+
+	<select id="ControlSchedule_List" parameterType="qss.vo.ControlScheduleVo" resultType="qss.vo.ControlScheduleVo">
+	/*
+	ID : controlSchedule_sql.Schedule_List
+	DEC : 스케줄 리스트 조회
+	*/
+	<include refid="Common.BeforeSQL"/>
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+			SELECT MS.DOMAIN_IDX 			/*도메인일련번호*/
+					,MS.BRAND_IDX 				/*서비스일련번호*/
+					,MS.CONTROL_SCHEDULE_IDX 		/*제어 스케줄 일련번호*/
+					,MS.CONTROL_SCHEDULE_NAME 	/*제어 스케줄명*/
+					,date_format(MS.START_DATE, '%Y-%m-%d') AS START_DATE		/*시작일자*/
+					,date_format(MS.END_DATE, '%Y-%m-%d') AS END_DATE 		/*종료일자*/
+					,CONCAT(substring(START_TIME,1,2),':',substring(START_TIME,3,2),':',substring(START_TIME,5,2)) AS START_TIME
+					,CONCAT(substring(END_TIME,1,2),':',substring(END_TIME,3,2),':',substring(END_TIME,5,2)) AS END_TIME
+					,DAY_OF_WEEK
+					,MS.ACTIVE_YN	         	/*활성화 여부*/
+					,MS.DEL_YN					/*삭제여부*/
+					,MS.REG_USER         		/*등록자*/
+					,date_format(MS.REG_DATE, '%Y-%m-%d') AS REG_DATE		/*등록일*/
+					,MS.MOD_USER         		/*수정자*/
+					,date_format(MS.MOD_DATE, '%Y-%m-%d') AS MOD_DATE		/*수정일*/
+					FROM CONTROL_SCHEDULE MS
+      				INNER JOIN brand b ON  b.DOMAIN_IDX = MS.DOMAIN_IDX AND b.BRAND_IDX = MS.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+      				LEFT JOIN (SELECT A.DOMAIN_IDX, A.BRAND_IDX, CONTROL_SCHEDULE_IDX , B.FRANC_IDX, A.DEVICE_IDX
+      							FROM CONTROL_SCHEDULE_TARGET A
+      							<if test="francIdx != null and francIdx != 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y' AND B.FRANC_IDX = #{francIdx} 
+								</if>
+								<if test="francIdx == null or francIdx == 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y'
+								</if>
+      							GROUP BY DOMAIN_IDX, BRAND_IDX, CONTROL_SCHEDULE_IDX, DEVICE_IDX
+			      				) st ON st.DOMAIN_IDX = MS.DOMAIN_IDX AND st.BRAND_IDX = MS.BRAND_IDX AND MS.CONTROL_SCHEDULE_IDX = st.CONTROL_SCHEDULE_IDX
+			WHERE
+			MS.DOMAIN_IDX = #{domainIdx}
+			AND ifnull(MS.DEL_YN, 'N') = 'N'
+			<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+				AND MS.BRAND_IDX = #{brandIdx}
+			</if>
+			<if test="francIdx != null and francIdx != null and francIdx != 0">
+				AND st.FRANC_IDX = #{francIdx}
+			</if>
+			<if test="sSearch != null and sSearch != ''">
+				AND MS.CONTROL_SCHEDULE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			</if>
+			<if test="sSortName == null or sSortName == ''">
+<!-- 			ORDER BY MS.MOD_DATE -->
+			</if>
+			GROUP BY MS.DOMAIN_IDX, MS.BRAND_IDX, MS.CONTROL_SCHEDULE_IDX
+		</if>
+		<!-- 시스템 관라지가 아닐경우(서비스, 매장 관리자) -->
+		 <if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+		 	SELECT MS.DOMAIN_IDX 			/*도메인일련번호*/
+					,MS.BRAND_IDX 				/*서비스일련번호*/
+					,MS.CONTROL_SCHEDULE_IDX 		/*제어 스케줄 일련번호*/
+					,MS.CONTROL_SCHEDULE_NAME 	/*제어 스케줄명*/
+					,date_format(MS.START_DATE, '%Y-%m-%d') AS START_DATE		/*시작일자*/
+					,date_format(MS.END_DATE, '%Y-%m-%d') AS END_DATE 		/*종료일자*/
+					,CONCAT(substring(START_TIME,1,2),':',substring(START_TIME,3,2),':',substring(START_TIME,5,2)) AS START_TIME
+					,CONCAT(substring(END_TIME,1,2),':',substring(END_TIME,3,2),':',substring(END_TIME,5,2)) AS END_TIME
+					,DAY_OF_WEEK
+					,MS.ACTIVE_YN	         	/*활성화 여부*/
+					,MS.DEL_YN					/*삭제여부*/
+					,MS.REG_USER         		/*등록자*/
+					,date_format(MS.REG_DATE, '%Y-%m-%d') AS REG_DATE		/*등록일*/
+					,MS.MOD_USER         		/*수정자*/
+					,date_format(MS.MOD_DATE, '%Y-%m-%d') AS MOD_DATE		/*수정일*/
+					FROM CONTROL_SCHEDULE MS
+      				INNER JOIN brand b ON  b.DOMAIN_IDX = MS.DOMAIN_IDX AND b.BRAND_IDX = MS.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+      				LEFT JOIN (SELECT A.DOMAIN_IDX, A.BRAND_IDX, CONTROL_SCHEDULE_IDX , B.FRANC_IDX, A.DEVICE_IDX
+      							FROM CONTROL_SCHEDULE_TARGET A
+      							<if test="francIdx != null and francIdx != 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y' AND B.FRANC_IDX = #{francIdx} 
+								</if>
+								<if test="francIdx == null or francIdx == 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y'
+								</if>
+      							GROUP BY DOMAIN_IDX, BRAND_IDX, CONTROL_SCHEDULE_IDX, DEVICE_IDX
+			      				) st ON st.DOMAIN_IDX = MS.DOMAIN_IDX AND st.BRAND_IDX = MS.BRAND_IDX AND MS.CONTROL_SCHEDULE_IDX = st.CONTROL_SCHEDULE_IDX
+			WHERE
+			MS.DOMAIN_IDX = #{domainIdx}
+			AND ifnull(MS.DEL_YN, 'N') = 'N'
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+			 	/* 서비스 관리자는 해당 서비스에 포함된 모든 매장 포함되게 또는 선택한 매장만 */
+				AND MS.BRAND_IDX = #{sessionBrandIdx}
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND st.FRANC_IDX = #{francIdx}
+				</if>
+			 </if>
+
+			 <if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+			 	/* 매장 관리자는 자신이 속한 서비스의 자기 매장만 보이게 */
+			 	AND MS.BRAND_IDX = #{sessionBrandIdx}
+				AND st.FRANC_IDX = #{sessionFrancIdx}
+			 </if>
+			<if test="sSearch != null and sSearch != ''">
+				AND MS.CONTROL_SCHEDULE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			</if>
+			<if test="sSortName == null or sSortName == ''">
+<!-- 			ORDER BY MOD_DATE -->
+			</if>
+			GROUP BY MS.DOMAIN_IDX, MS.BRAND_IDX, MS.CONTROL_SCHEDULE_IDX
+		 </if>
+		<include refid="Common.AfterSQL"/>
+	</select>
+
+
+	<select id="ControlSchedule_ListCnt" parameterType="qss.vo.ControlScheduleVo" resultType="int">
+		/*
+		  ID  : controlSchedule_sql.Schedule_ListCnt
+		  DEC : 스케줄 Cnt 조회
+		*/
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+			 SELECT COUNT(MS.DOMAIN_IDX)
+			 FROM   CONTROL_SCHEDULE MS
+      				INNER JOIN brand b ON  b.DOMAIN_IDX = MS.DOMAIN_IDX AND b.BRAND_IDX = MS.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+      				LEFT JOIN (SELECT A.DOMAIN_IDX, A.BRAND_IDX, CONTROL_SCHEDULE_IDX , B.FRANC_IDX, A.DEVICE_IDX
+      							FROM CONTROL_SCHEDULE_TARGET A
+      							<if test="francIdx != null and francIdx != 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y' AND B.FRANC_IDX = #{francIdx} 
+								</if>
+								<if test="francIdx == null or francIdx == 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y'
+								</if> 
+      							GROUP BY DOMAIN_IDX, BRAND_IDX, CONTROL_SCHEDULE_IDX, DEVICE_IDX
+			      				) st ON st.DOMAIN_IDX = MS.DOMAIN_IDX AND st.BRAND_IDX = MS.BRAND_IDX AND MS.CONTROL_SCHEDULE_IDX = st.CONTROL_SCHEDULE_IDX
+			 WHERE
+			 MS.DOMAIN_IDX = #{domainIdx}
+			 AND ifnull(MS.DEL_YN, 'N') = 'N'
+			 <if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+				AND MS.BRAND_IDX = #{brandIdx}
+			 </if>
+			 <if test="francIdx != null and francIdx != null and francIdx != 0">
+				AND st.FRANC_IDX = #{francIdx}
+			 </if>
+			 <if test="sSearch != null and sSearch != ''">
+				AND MS.CONTROL_SCHEDULE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			 </if>
+		</if>
+		<!-- 시스템 관라지가 아닐경우(서비스, 매장 관리자) -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+		 	SELECT COUNT(MS.DOMAIN_IDX)
+			 FROM   CONTROL_SCHEDULE MS
+      				INNER JOIN brand b ON  b.DOMAIN_IDX = MS.DOMAIN_IDX AND b.BRAND_IDX = MS.BRAND_IDX AND ifnull(b.DEL_YN, 'N') = 'N'
+      				LEFT JOIN (SELECT A.DOMAIN_IDX, A.BRAND_IDX, CONTROL_SCHEDULE_IDX , B.FRANC_IDX, A.DEVICE_IDX
+      							FROM CONTROL_SCHEDULE_TARGET A
+      							<if test="francIdx != null and francIdx != 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y' AND B.FRANC_IDX = #{francIdx} 
+								</if>
+								<if test="francIdx == null or francIdx == 0">
+									INNER JOIN KIOSK B ON A.DEVICE_IDX = B.DEVICE_IDX AND A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND B.DEL_YN = 'N' AND B.ACTIVE_YN = 'Y'
+								</if> 
+      							GROUP BY DOMAIN_IDX, BRAND_IDX, CONTROL_SCHEDULE_IDX, DEVICE_IDX
+			      				) st ON st.DOMAIN_IDX = MS.DOMAIN_IDX AND st.BRAND_IDX = MS.BRAND_IDX AND MS.CONTROL_SCHEDULE_IDX = st.CONTROL_SCHEDULE_IDX
+			 WHERE
+			 MS.DOMAIN_IDX = #{domainIdx}
+			 AND ifnull(MS.DEL_YN, 'N') = 'N'
+			 <if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+			 	/* 서비스 관리자는 해당 서비스에 포함된 모든 매장 포함되게 또는 선택한 매장만 */
+				AND MS.BRAND_IDX = #{sessionBrandIdx}
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND st.FRANC_IDX = #{francIdx}
+				</if>
+			 </if>
+
+			 <if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+			 	/* 매장 관리자는 자신이 속한 서비스의 자기 매장만 보이게 */
+			 	AND MS.BRAND_IDX = #{sessionBrandIdx}
+				AND st.FRANC_IDX = #{sessionFrancIdx}
+			 </if>
+			 <if test="sSearch != null and sSearch != ''">
+				AND MS.CONTROL_SCHEDULE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			 </if>
+		</if>
+	</select>
+	
+	<select id="ControlSchedule_SearchKioskTree" parameterType="hashmap" resultType="hashmap">
+		/* 
+		  ID  : controlSchedule_sql.Schedule_SearchKioskTree
+		  DEC : 우측 단말기 트리 조회
+		*/
+		SELECT
+		  A.DEPTH
+		  ,A.DEPTH_NAME
+		  ,A.IDX
+		  ,A.NAME
+		  ,A.PARENT_IDX
+		  ,IF((SELECT IFNULL(MAX(TR.DEVICE_IDX), '0') FROM CONTROL_SCHEDULE_TARGET TR WHERE TR.DOMAIN_IDX = A.DOMAIN_IDX AND TR.BRAND_IDX = A.BRAND_IDX AND TR.DEVICE_IDX = A.DEVICE_IDX and TR.CONTROL_SCHEDULE_IDX = #{controlScheduleIdx})
+		      = '0', '0', '1') AS CHECKED
+		FROM
+		(
+		    SELECT  '1' AS DEPTH
+				      , 'DOMAIN' AS DEPTH_NAME
+				      , DOMAIN_IDX AS IDX
+				      , DOMAIN_NAME AS NAME
+				      , '0' AS PARENT_IDX
+				      , '0' AS CHECKED
+		          , DOMAIN_IDX
+		          , '0' AS BRAND_IDX
+		          , '0' AS GROUP_IDX
+		          , '0' AS FRANC_IDX
+		          ,'0' AS DEVICE_IDX
+				FROM DOMAIN WHERE DOMAIN_IDX = #{domainIdx}
+				UNION ALL
+				SELECT  '2'
+				      , 'BRAND'
+				      , CONCAT(DOMAIN_IDX, '_', BRAND_IDX)
+				      , NAME
+				      , DOMAIN_IDX
+				      , '0'
+		          , DOMAIN_IDX
+		          , BRAND_IDX
+		          , '0' AS GROUP_IDX
+		          , '0' AS FRANC_IDX
+		          ,'0' AS DEVICE_IDX
+				FROM    BRAND
+				WHERE   ifnull(DEL_YN, 'N') = 'N' AND DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+				UNION ALL
+				SELECT  '3'+GROUP_DEPTH
+						 , 'GROUP'
+						 , CONCAT(DOMAIN_IDX, '_', BRAND_IDX, '_', GROUP_IDX)
+						 , GROUP_NAME
+						 , CONCAT(DOMAIN_IDX, '_', BRAND_IDX, if( PARENT_GROUP_IDX = '', '', CONCAT('_', PARENT_GROUP_IDX)))
+						 , '0'
+				          , DOMAIN_IDX
+				          , BRAND_IDX
+				          , GROUP_IDX
+				          , '0' AS FRANC_IDX
+				          ,'0' AS DEVICE_IDX
+					FROM   SITEGROUP
+					WHERE  ifnull(DEL_YN, 'N') = 'N'
+				UNION ALL
+				SELECT  '4' + B.GROUP_DEPTH
+				     , 'FRANCHISEE'
+				     , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', A.GROUP_IDX, '_', A.FRANC_IDX)
+					 , FRANC_NAME
+					 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', A.GROUP_IDX)
+		         , '0'
+		         , A.DOMAIN_IDX
+		         , A.BRAND_IDX
+				 , A.GROUP_IDX
+		         , A.FRANC_IDX
+		         ,'0' AS DEVICE_IDX
+				FROM   FRANCHISEE A
+					INNER JOIN SITEGROUP B ON A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND A.GROUP_IDX = B.GROUP_IDX
+					<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+					/* 매장관리자는 자신것만 보이도록 설정*/
+					AND A.FRANC_IDX =  #{sessionFrancIdx}
+					</if>
+				WHERE  ifnull(A.DEL_YN, 'N') = 'N' AND A.DOMAIN_IDX = #{domainIdx} AND A.BRAND_IDX = #{brandIdx}
+				UNION ALL
+				SELECT  '5'
+				     , 'KIOSK'
+				     , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', B.GROUP_IDX, '_', A.FRANC_IDX, '_', A.DEVICE_IDX)
+				     , DEVICE_NAME
+				     , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', B.GROUP_IDX, '_', A.FRANC_IDX)
+		         , '0'
+		         , A.DOMAIN_IDX
+		         , A.BRAND_IDX
+				 , B.GROUP_IDX
+		         , A.FRANC_IDX
+		         , A.DEVICE_IDX
+				FROM   KIOSK A
+					INNER JOIN FRANCHISEE B ON A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND A.FRANC_IDX = B.FRANC_IDX
+				WHERE ifnull(A.DEL_YN, 'N') = 'N' AND A.DOMAIN_IDX = #{domainIdx} AND A.BRAND_IDX = #{brandIdx} 
+				 <if test="searchDvType != null and searchDvType != ''">
+				 	AND DEVICE_TYPE = #{searchDvType}
+				 </if>
+				 <if test="searchDvRes != null and searchDvRes != ''">
+				 	AND DEVICE_RES_TYPE = #{searchDvRes}
+				 </if>
+				 <if test="searchDvSite != null and searchDvSite != ''">
+				 	AND DEVICE_SITE_TYPE = #{searchDvSite}
+				 </if>
+				 <if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+					/* 매장관리자는 자신것만 보이도록 설정*/
+					AND A.FRANC_IDX =  #{sessionFrancIdx}
+					</if>
+		) AS A
+	</select>
+	
+	<update id="ControlSchedule_UpdateSchedule" parameterType="qss.vo.ControlScheduleVo">
+		/*
+		ID : controlSchedule_sql.ControlSchedule_UpdateSchedule
+		DEC : 제어 스케줄 정보 수정
+		*/
+			<![CDATA[
+				UPDATE  CONTROL_SCHEDULE
+			    SET     CONTROL_SCHEDULE_NAME = #{controlScheduleName},
+			    		START_DATE = #{startDate},
+			    		END_DATE = #{endDate},
+			    		START_TIME = REPLACE(#{startTime},':',''),
+			    		ACTIVE_YN = #{activeYn},
+			            DAY_OF_WEEK = #{dayOfWeek},
+			            CONTROL_TYPE = #{controlType},
+			            CONTROL_VALUE = #{controlValue},
+			            MOD_USER = #{modUser},
+			            MOD_DATE = NOW()
+			    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+			    AND CONTROL_SCHEDULE_IDX = #{controlScheduleIdx}
+			]]>
+	</update>
+	<insert id="ControlSchedule_InsertSchedule" parameterType="qss.vo.ControlScheduleVo" useGeneratedKeys="true">
+		/*
+		ID : controlSchedule_sql.ControlSchedule_InsertSchedule
+		DEC : 메인 스크린 정보 등록
+		*/
+		<selectKey keyProperty="controlScheduleIdx" resultType="biginteger" order="BEFORE">
+			SELECT
+				IFNULL(MAX(CONTROL_SCHEDULE_IDX) + 1, 1)
+			FROM CONTROL_SCHEDULE
+		</selectKey>
+		<![CDATA[
+			INSERT INTO CONTROL_SCHEDULE
+				(
+					DOMAIN_IDX,
+					BRAND_IDX,
+					CONTROL_SCHEDULE_IDX,
+					CONTROL_SCHEDULE_NAME,
+					DAY_OF_WEEK,
+					START_DATE,
+					END_DATE,
+					START_TIME,
+		            CONTROL_TYPE,
+		            CONTROL_VALUE,
+					ACTIVE_YN,
+					DEL_YN,
+					REG_USER,
+		            REG_DATE,
+		            MOD_USER,
+		            MOD_DATE
+					)
+			VALUES
+				(
+					#{domainIdx},
+       			    #{brandIdx},
+       				#{controlScheduleIdx},
+					#{controlScheduleName},
+					#{dayOfWeek},
+					#{startDate},
+		            #{endDate},
+		            REPLACE(#{startTime},':',''),
+		            #{controlType},
+			        #{controlValue},
+		            #{activeYn},
+		            'N',
+		            #{regUser},
+		            NOW(),
+		            #{modUser},
+		            NOW()
+				)
+		]]>
+	</insert>
+	
+	<insert id="ControlSchedule_InsertScheduleTarget" parameterType="java.util.Map">
+		/*
+		ID : controlSchedule_sql.ControlSchedule_InsertScheduleTarget
+		DEC : 제어 스케줄 타겟 정보 등록
+		*/
+			INSERT INTO CONTROL_SCHEDULE_TARGET
+				(
+					DOMAIN_IDX,
+					BRAND_IDX,
+					CONTROL_SCHEDULE_IDX,
+					DEVICE_IDX,
+					REG_USER,
+		            REG_DATE,
+		            MOD_USER,
+		            MOD_DATE
+					)
+			VALUES
+				<foreach collection="list" item="item" separator=" , ">
+				(
+					#{item.domainIdx},
+       			    #{item.brandIdx},
+       				#{item.controlScheduleIdx},
+					#{item.deviceIdx},
+		            #{item.regUser},
+		            NOW(),
+		            #{item.modUser},
+		            NOW()
+		        )
+		        </foreach>
+	</insert>
+	
+	<insert id="ControlSchedule_UpdateScheduleVersion" parameterType="qss.vo.ControlScheduleVo">
+			INSERT INTO SCHEDULE_VERSION
+			(
+			  DEVICE_CODE
+			 ,SCHEDULE_VERSION_IDX
+			 ,SCHEDULE_TYPE
+			 ,MOD_REASON
+			 ,REG_USER
+			 ,REG_DATE
+			 ,MOD_USER
+			 ,MOD_DATE
+			)
+			SELECT DEVICE_CODE
+				   ,(SELECT IFNULL(MAX(SCHEDULE_VERSION_IDX) + 1, 1) FROM SCHEDULE_VERSION) AS SCHEDULE_VERSION_IDX
+			       ,#{scheduleType} AS SCHEDULE_TYPE
+			       ,(
+			      		SELECT CODE_NAME
+			      		FROM   SYSTEM_CODE
+			      		WHERE  CODE_GROUP = 'SCH0000' AND  CODE_VALUE = #{scheduleType}
+			      	) AS MOD_REASON
+			       ,#{regUser} AS REG_USER
+			       ,now() AS REG_DATE
+			       ,#{modUser} AS MOD_USER
+				   ,now() AS MOD_DATE
+			FROM
+			(
+				SELECT K.DEVICE_CODE
+				FROM   KIOSK K, CONTROL_SCHEDULE_TARGET ST
+				WHERE  K.DOMAIN_IDX = ST.DOMAIN_IDX
+				AND    K.BRAND_IDX = ST.BRAND_IDX
+				AND    K.DOMAIN_IDX = #{domainIdx}
+				AND    K.BRAND_IDX = #{brandIdx}
+				AND    K.DEVICE_IDX = ST.DEVICE_IDX
+				AND    IFNULL(K.DEL_YN, 'N') = 'N'
+				AND    CONTROL_SCHEDULE_IDX = #{controlScheduleIdx}
+				UNION
+				SELECT DEVICE_CODE
+				FROM   KIOSK
+				WHERE  DOMAIN_IDX = #{domainIdx}
+				AND    BRAND_IDX = #{brandIdx}
+				AND    IFNULL(DEL_YN, 'N') = 'N'
+				AND    DEVICE_IDX IN
+				<foreach collection="deviceList" item="id" open="(" close=")" separator=",">
+			        #{id}
+			     </foreach>
+			) A
+	</insert>
+	
+	<select id="ControlSchedule_ScheduleGet" parameterType="qss.vo.ControlScheduleVo" resultType="qss.vo.ControlScheduleVo">
+	/*
+	ID : Controlschedule_sql.ControlSchedule_ScheduleGet
+	DEC : 제어 스케줄 상세 조회
+	*/
+	SELECT
+			 A.DOMAIN_IDX 			/*도메인일련번호*/
+			,A.BRAND_IDX 				/*서비스일련번호*/
+			,CONTROL_SCHEDULE_IDX 	/*제어 스케줄 일련번호*/
+			,DAY_OF_WEEK			/*적용 주*/
+			,CONTROL_SCHEDULE_NAME 	/*제어 스케줄명*/
+			,date_format(START_DATE, '%Y-%m-%d') AS START_DATE		/*시작일자*/
+			,date_format(END_DATE, '%Y-%m-%d') AS END_DATE 		/*종료일자*/
+			,CONCAT(substring(START_TIME,1,2),':',substring(START_TIME,3,2),':',substring(START_TIME,5,2)) AS START_TIME
+			,CONTROL_TYPE
+		    ,CONTROL_VALUE
+			,A.ACTIVE_YN	         	/*활성화 여부*/
+			,A.DEL_YN					/*삭제여부*/
+			,A.REG_USER         		/*등록자*/
+			,date_format(A.REG_DATE, '%Y-%m-%d') AS REG_DATE		/*등록일*/
+			,A.MOD_USER         		/*수정자*/
+			,date_format(A.MOD_DATE, '%Y-%m-%d') AS MOD_DATE		/*수정일*/
+			,B.ADMIN_TYPE
+		FROM   CONTROL_SCHEDULE A
+		LEFT JOIN USERS B ON A.MOD_USER = B.ID
+	WHERE A.DOMAIN_IDX = #{domainIdx}
+	<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+		AND A.BRAND_IDX = #{brandIdx}
+	</if>
+	AND CONTROL_SCHEDULE_IDX = #{controlScheduleIdx}
+	</select>
+	
+	<delete id="ControlSchedule_DeleteScheduleTarget" parameterType="qss.vo.ControlScheduleVo">
+		/*
+		ID : Controlschedule_sql.ControlSchedule_DeleteScheduleTarget
+		DEC : 제어 스케줄 타겟 정보 삭제
+		*/
+		<![CDATA[
+			DELETE FROM CONTROL_SCHEDULE_TARGET
+			WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+			    AND CONTROL_SCHEDULE_IDX = #{controlScheduleIdx}
+		]]>
+	</delete>
+	
+	
+	<insert id="ControlSchedule_InsertDelScheduleVersion" parameterType="qss.vo.ControlScheduleVo">
+
+		INSERT INTO SCHEDULE_VERSION
+		(
+		  DEVICE_CODE
+		 ,SCHEDULE_VERSION_IDX
+		 ,SCHEDULE_TYPE
+		 ,MOD_REASON
+		 ,REG_USER
+		 ,REG_DATE
+		 ,MOD_USER
+		 ,MOD_DATE
+		)
+		SELECT  DEVICE_CODE
+			   ,(SELECT IFNULL(MAX(SCHEDULE_VERSION_IDX) + 1, 1) FROM SCHEDULE_VERSION) AS SCHEDULE_VERSION_IDX
+		       ,#{scheduleType} AS SCHEDULE_TYPE
+		       ,(
+		      		SELECT CODE_NAME
+		      		FROM   SYSTEM_CODE
+		      		WHERE  CODE_GROUP = 'SCH0000' AND  CODE_VALUE = #{scheduleType}
+		      		AND    IFNULL(DEL_YN, 'N') = 'N'
+		      	) AS MOD_REASON
+		       ,#{regUser} AS REG_USER
+		       ,now() AS REG_DATE
+		       ,#{modUser} AS MOD_USER
+			   ,now() AS MOD_DATE
+		FROM
+		(
+			SELECT K.DEVICE_CODE
+			FROM   KIOSK K, CONTROL_SCHEDULE_TARGET ST
+			WHERE  K.DOMAIN_IDX = ST.DOMAIN_IDX
+			AND    K.BRAND_IDX = ST.BRAND_IDX
+			AND    K.DOMAIN_IDX = #{domainIdx}
+			AND    K.BRAND_IDX = #{brandIdx}
+			AND    K.DEVICE_IDX = ST.DEVICE_IDX
+			AND    CONTROL_SCHEDULE_IDX IN
+			<foreach collection="checkboxArr" item="id" open="(" close=")" separator=",">
+		        #{id}
+		    </foreach>
+		    GROUP BY K.DOMAIN_IDX, K.BRAND_IDX, K.DEVICE_IDX
+
+		) A
+	</insert>
+	
+	<update id="ControlSchedule_DeleteScheduleMain" parameterType="hashmap">
+		/*
+		ID : controlSchedule_sql.ControlSchedule_DeleteScheduleMain
+		DEC : 제어 스케줄 삭제 처리
+		*/
+				UPDATE  CONTROL_SCHEDULE
+			    SET     DEL_YN = 'Y',
+			            MOD_USER = #{modUser},
+			            MOD_DATE = NOW()
+			    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+				AND CONTROL_SCHEDULE_IDX IN
+				<foreach collection="arrIndex" item="controlScheduleIdx"  open="(" close=")" separator=",">
+		            #{controlScheduleIdx}
+		        </foreach>
+	</update>
+	
+	<update id="ControlSchedule_SetActiveYn" parameterType="qss.vo.ScheduleVo">
+		/*
+		ID : controlSchedule_sql.ControlSchedule_SetActiveYn
+		DEC : 메인 스케줄 활성화 처리
+		*/
+			<![CDATA[
+				UPDATE  CONTROL_SCHEDULE
+			    SET     ACTIVE_YN = #{activeYn},
+			            MOD_USER = #{modUser},
+			            MOD_DATE = NOW()
+			    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+			    AND CONTROL_SCHEDULE_IDX = #{controlScheduleIdx}
+			]]>
+	</update>
+	
+	
+	
+</mapper>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "HTTP://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+		<setting name="callSettersOnNulls" value="true"/>
+	</settings>
+	<typeAliases>	
+		<typeAlias type="qss.vo.CommonVo" alias="CommonVo"/>
+		<typeAlias type="qss.vo.IndexVo" alias="IndexVo"/>
+		<typeAlias type="qss.vo.LoginVo" alias="LoginVo"/>
+		<typeAlias type="qss.vo.MenuVo" alias="MenuVo"/>
+		<typeAlias type="qss.vo.MenuInfoVo" alias="MenuInfoVo"/>
+		<typeAlias type="qss.vo.VaildateVo" alias="ValidateVo"/>
+		<typeAlias type="qss.vo.UploadVo" alias="UploadVo"/>
+		<typeAlias type="qss.vo.FranchiseeVo" alias="FranchiseeVo"/>
+		<typeAlias type="qss.vo.KioskVo" alias="KioskVo"/>
+		<typeAlias type="qss.vo.BrandVo" alias="BrandVo"/>
+		<typeAlias type="qss.vo.ScreenVo" alias="ScreenVo"/>
+		<typeAlias type="qss.vo.ScheduleScreenVo" alias="ScheduleScreenVo"/>
+		<typeAlias type="qss.vo.ReceiptVo" alias="ReceiptVo"/>
+		<typeAlias type="qss.vo.OrderProdVo" alias="OrderProdVo"/>
+		<typeAlias type="qss.vo.ScheduleVersionVo" alias="ScheduleVersionVo"/>
+		<typeAlias type="qss.vo.ScheduleResultVo" alias="ScheduleResultVo" />
+		<typeAlias type="qss.vo.ScreenResultVo" alias="ScreenResultVo" />
+		<typeAlias type="qss.vo.LayerResultVo" alias="LayerResultVo" />
+		<typeAlias type="qss.vo.ContentResultVo" alias="ContentResultVo" />
+		<typeAlias type="qss.vo.DomainScheduleVo" alias="DomainScheduleVo" />
+		<typeAlias type="qss.vo.MenuResultVo" alias="MenuResultVo" />
+		<typeAlias type="qss.vo.OrderProdResultVo" alias="OrderProdResultVo" />
+		<typeAlias type="qss.vo.ProdSetResultVo" alias="ProdSetResultVo" />
+		<typeAlias type="qss.vo.ProdSetItemResultVo" alias="ProdSetItemResultVo" />
+		<typeAlias type="qss.vo.BrandResultVo" alias="BrandResultVo" />
+		<typeAlias type="qss.vo.DiscountResultVo" alias="DiscountResultVo" />
+		<typeAlias type="qss.vo.FranchiseeResultVo" alias="FranchiseeResultVo" />
+		<typeAlias type="qss.vo.OrderMasterVo" alias="OrderMasterVo" />
+		<typeAlias type="qss.vo.OrderItemVo" alias="OrderItemVo" />
+		<typeAlias type="qss.vo.FrancReceiptResultVo" alias="FrancReceiptResultVo" />
+		<typeAlias type="qss.vo.SalesHistoryVo" alias="SalesHistoryVo" />
+		<typeAlias type="qss.vo.OrderItemVo" alias="OrderItemVo" />
+		<typeAlias type="qss.vo.CalculateVo" alias="CalculateVo" />
+		<typeAlias type="qss.vo.KioskClientVo" alias="KioskClientVo" />
+		<typeAlias type="qss.vo.CalendarVo" alias="CalendarVo" />
+		<typeAlias type="qss.vo.FloorVo" alias="FloorVo" />
+		<typeAlias type="qss.vo.ShopVo" alias="ShopVo" />
+		<typeAlias type="qss.vo.FloorShopVo" alias="FloorShopVo" />
+	</typeAliases>
+
+	<typeHandlers>
+		<typeHandler handler="org.apache.ibatis.type.ClobTypeHandler" jdbcType="CLOB" javaType="java.lang.String"/>
+		<typeHandler handler="qss.util.StringCodingHandler" jdbcType="VARCHAR" javaType="java.lang.String"/>
+	</typeHandlers>
+</configuration>

@@ -1,0 +1,1615 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Schedule">
+	<resultMap type="qss.vo.ScheduleVersionVo" id="ScheduleVersionVo" />
+	<resultMap type="qss.vo.KioskVo" id="KioskVo" />
+	<resultMap type="qss.vo.ScheduleResultVo" id="ScheduleResultVo" />
+	<resultMap type="qss.vo.ScreenResultVo" id="ScreenResultVo" />
+	<resultMap type="qss.vo.LayerResultVo" id="LayerResultVo" />
+	<resultMap type="qss.vo.ContentResultVo" id="ContentResultVo" />
+	<resultMap type="qss.vo.DomainScheduleVo" id="DomainScheduleVo" />
+	<resultMap type="qss.vo.MenuResultVo" id="MenuResultVo" />
+	<resultMap type="qss.vo.OrderProdResultVo" id="OrderProdResultVo" />
+	<resultMap type="qss.vo.ProdSetResultVo" id="ProdSetResultVo" />
+	<resultMap type="qss.vo.ProdSetItemResultVo" id="ProdSetItemResultVo" />
+	<resultMap type="qss.vo.BrandResultVo" id="BrandResultVo" />
+	<resultMap type="qss.vo.DiscountResultVo" id="DiscountResultVo" />
+	<resultMap type="qss.vo.FranchiseeResultVo" id="FranchiseeResultVo" />
+	<resultMap type="qss.vo.OrderMasterVo" id="OrderMasterVo" />
+	<resultMap type="qss.vo.OrderItemVo" id="OrderItemVo" />
+	<resultMap type="qss.vo.FrancReceiptResultVo" id="FrancReceiptResultVo" />
+	<resultMap type="qss.vo.OrderDocResultVo" id="OrderDocResultVo" />
+	<resultMap type="qss.vo.KioskWaitingResultVo" id="KioskWaitingResultVo" />
+<!-- 	<resultMap type="qss.vo.ScheduleScreenVo" id="ScheduleScreenVo" /> -->
+	<resultMap type="qss.vo.ScreenLayerVo" id="ScreenLayerVo" />
+	<resultMap type="qss.vo.MainScheduleVo" id="MainScheduleVo" />
+	<resultMap type="qss.vo.UploadVo" id="UploadVo" />
+	<resultMap type="qss.vo.LayerContentVo" id="LayerContentVo" />
+	<resultMap type="qss.vo.EventContentVo" id="EventContentVo" />
+
+	<select id="RestAPI_IdxSearch" parameterType="String" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.RestAPI_IdxSearch
+		  DEC : 일련번호 조회
+		*/
+		SELECT DOMAIN_IDX
+		      ,BRAND_IDX
+		      ,FRANC_IDX
+		      ,DEVICE_IDX
+		FROM   kiosk
+		WHERE  DEVICE_CODE = #{deviceCode}
+		AND    IFNULL(DEL_YN, 'N') = 'N'
+		AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+	</select>
+
+	<select id="GetBrandDetail" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetBrandDetail
+		  DEC : 서비스 조회
+		*/
+		SELECT  B.DOMAIN_IDX
+		       ,B.BRAND_IDX
+		       ,B.BRAND_CODE
+			   ,B.NAME
+			   ,(
+			   		SELECT COUNT(*) 
+			   		FROM   franchisee F 
+			   		WHERE  F.DOMAIN_IDX = B.DOMAIN_IDX 
+			   		AND    F.BRAND_IDX = B.BRAND_IDX 
+			   		AND    IFNULL(DEL_YN, 'N') = 'N'
+	                AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+			   	) AS ORDER_SHEET_TYPE
+			   ,(
+			   		SELECT SAVE_PATH 
+			   		FROM file_content 
+			   		WHERE FILE_CONTENT_IDX = B.LOGO_FILE 
+			   		AND IFNULL(DEL_YN, 'N') = 'N'
+			   	) AS LOGO_FILE
+			   , CONCAT
+			   	 (
+			   	 	#{realPath},
+			   	 	(
+			   	 		SELECT SAVE_PATH 
+			   	 		FROM file_content 
+			   	 		WHERE FILE_CONTENT_IDX = B.LOGO_FILE 
+			   	 		AND IFNULL(DEL_YN, 'N') = 'N'
+			   	 	)
+			    ) AS REAL_PATH
+			   ,B.ACTIVE_YN
+			   ,(
+	              SELECT GROUP_CONCAT(DEVICE_TYPE SEPARATOR ',')
+	              FROM   brand_device_type BDT
+	              WHERE  DEVICE_TYPE = 
+	              		 (
+	              		 	SELECT CODE_VALUE 
+	              		 	FROM   system_code 
+	              		 	WHERE  CODE_GROUP = 'DVC0000' 
+	              		 	AND    CODE_VALUE = BDT.DEVICE_TYPE 
+	              		 	AND    IFNULL(DEL_YN, 'N') = 'N'
+							AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+						 )
+	              AND    IFNULL(DEL_YN, 'N') = 'N'
+	              AND    DOMAIN_IDX = B.DOMAIN_IDX
+	              AND    BRAND_IDX = B.BRAND_IDX
+	             ) AS DEVICE_TYPE
+			   ,(
+	              SELECT GROUP_CONCAT(PAY_TYPE SEPARATOR ',')
+	              FROM   brand_payment_type BPT
+	              WHERE  PAY_TYPE = 
+	              		 (
+	              		 	SELECT CODE_VALUE 
+	              		 	FROM   system_code 
+	              		 	WHERE  CODE_GROUP = 'PAY0000' 
+	              		 	AND    CODE_VALUE = BPT.PAY_TYPE 
+	              		 	AND    IFNULL(DEL_YN, 'N') = 'N'
+							AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+						 )
+	              AND    IFNULL(DEL_YN, 'N') = 'N'
+	              AND    DOMAIN_IDX = B.DOMAIN_IDX
+	              AND    BRAND_IDX = B.BRAND_IDX
+	              AND    BRAND_ONLY_YN = 'Y'
+	              AND    PAY_TYPE_GROUP = 'PAY0000'
+	             ) AS PAY_TYPE
+	            ,(
+	              SELECT GROUP_CONCAT(PAY_TYPE SEPARATOR ',')
+	              FROM   brand_payment_type BPT
+	              WHERE  PAY_TYPE = 
+	              		 (
+	              		 	SELECT CODE_VALUE 
+	              		 	FROM   system_code 
+	              		 	WHERE  CODE_GROUP = 'PNT0000' 
+	              		 	AND    CODE_VALUE = BPT.PAY_TYPE 
+	              		 	AND    IFNULL(DEL_YN, 'N') = 'N'
+							AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+						 )
+	              AND    IFNULL(DEL_YN, 'N') = 'N'
+	              AND    DOMAIN_IDX = B.DOMAIN_IDX
+	              AND    BRAND_IDX = B.BRAND_IDX
+	              AND    BRAND_ONLY_YN = 'Y'
+	              AND    PAY_TYPE_GROUP = 'PNT0000'
+	             ) AS PNT_TYPE
+			   ,B.REG_USER
+			   ,B.REG_DATE
+			   ,B.MOD_USER
+			   ,B.MOD_DATE
+		  FROM  BRAND B,
+		  (
+		     SELECT DOMAIN_IDX, BRAND_IDX
+		     FROM  kiosk
+		     WHERE DEVICE_CODE
+		     IN
+		     (
+		        SELECT DEVICE_CODE
+		        FROM   schedule_version
+		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+		        GROUP BY DEVICE_CODE
+		     )
+		     AND IFNULL(DEL_YN, 'N') = 'N'
+		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+		     GROUP BY DOMAIN_IDX, BRAND_IDX
+		  ) K
+		  WHERE B.DOMAIN_IDX = K.DOMAIN_IDX
+		  AND   B.BRAND_IDX = K.BRAND_IDX
+		  AND   IFNULL(B.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(B.ACTIVE_YN, 'Y') = 'Y'
+	</select>
+
+	<select id="GetFranchiseeDetail" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetFranchiseeDetail
+		  DEC : 사이트 조회
+		*/
+		SELECT   F.DOMAIN_IDX
+		        ,F.BRAND_IDX
+		        ,F.FRANC_IDX
+		        ,FRANC_CODE
+		        ,FRANC_NAME
+		        ,SAP_MS_CD
+		        ,ACTIVE_YN
+		        ,(
+		        	SELECT SAVE_PATH 
+		        	FROM file_content 
+		        	WHERE FILE_CONTENT_IDX = F.MAIN_IMG 
+		        	AND IFNULL(DEL_YN, 'N') = 'N'
+		        ) AS MAIN_IMG
+			    ,CONCAT
+			    (
+			    	#{realPath},
+			    	(
+			    		SELECT SAVE_PATH 
+			    		FROM file_content 
+			    		WHERE FILE_CONTENT_IDX = F.MAIN_IMG 
+			    		AND IFNULL(DEL_YN, 'N') = 'N'
+			    	)
+			    ) AS REAL_PATH
+			    ,MAIN_IMG
+		        ,FRANC_ADDR
+		        ,FRANC_ADDR_DETAIL
+		        ,TEL_NUM
+		        ,SALES_START_TIME
+		        ,SALES_END_TIME
+		        ,ALL_DAY_SALES_YN
+		        ,CLOSED_DAY_INFO
+		        ,CATEGORY_TYPE
+		        ,(
+	              SELECT GROUP_CONCAT(PAY_TYPE SEPARATOR ',')
+	              FROM   brand_payment_type BPT
+	              WHERE  PAY_TYPE = 
+	              		 (
+	              		 	SELECT CODE_VALUE 
+	              		 	FROM   system_code 
+	              		 	WHERE  CODE_GROUP = 'PAY0000' 
+	              		 	AND    CODE_VALUE = BPT.PAY_TYPE 
+	              		 	AND    IFNULL(DEL_YN, 'N') = 'N'
+							AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+						 )
+	              AND    IFNULL(DEL_YN, 'N') = 'N'
+	              AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+	              AND    DOMAIN_IDX = F.DOMAIN_IDX
+	              AND    BRAND_IDX = F.BRAND_IDX
+	              AND    FRANC_IDX = F.FRANC_IDX
+	              AND    BRAND_ONLY_YN = 'N'
+	              AND    PAY_TYPE_GROUP = 'PAY0000'
+	             ) AS PAY_TYPE
+	            ,(
+	              SELECT GROUP_CONCAT(PAY_TYPE SEPARATOR ',')
+	              FROM   brand_payment_type BPT
+	              WHERE  PAY_TYPE = 
+	              		 (
+	              		 	SELECT CODE_VALUE 
+	              		 	FROM   system_code 
+	              		 	WHERE  CODE_GROUP = 'PNT0000' 
+	              		 	AND    CODE_VALUE = BPT.PAY_TYPE 
+	              		 	AND    IFNULL(DEL_YN, 'N') = 'N'
+							AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+						 )
+	              AND    IFNULL(DEL_YN, 'N') = 'N'
+	              AND    IFNULL(ACTIVE_YN, 'Y') = 'Y'
+	              AND    DOMAIN_IDX = F.DOMAIN_IDX
+	              AND    BRAND_IDX = F.BRAND_IDX
+	              AND    FRANC_IDX = F.FRANC_IDX
+	              AND    BRAND_ONLY_YN = 'N'
+	              AND    PAY_TYPE_GROUP = 'PNT0000'
+	             ) AS PAT_TYPE
+		        ,MEMO
+		        ,DEL_YN
+		        ,REG_USER
+		        ,REG_DATE
+		        ,MOD_USER
+		        ,MOD_DATE
+		  FROM  franchisee F,
+		  (
+		     SELECT DOMAIN_IDX, BRAND_IDX, FRANC_IDX
+		     FROM  kiosk
+		     WHERE DEVICE_CODE
+		     IN
+		     (
+		        SELECT DEVICE_CODE
+		        FROM   schedule_version
+		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+		        GROUP BY DEVICE_CODE
+		     )
+		     AND IFNULL(DEL_YN, 'N') = 'N'
+		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+		     GROUP BY DOMAIN_IDX, BRAND_IDX, FRANC_IDX
+		  ) K
+
+		  WHERE F.DOMAIN_IDX = K.DOMAIN_IDX
+		  AND   F.BRAND_IDX = K.BRAND_IDX
+		  AND   F.FRANC_IDX = K.FRANC_IDX
+		  AND   IFNULL(F.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(F.ACTIVE_YN, 'Y') = 'Y'
+	</select>
+
+	<select id="GetDeviceDetail" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetDeviceDetail
+		  DEC : 단말 조회
+		*/
+		SELECT   DOMAIN_IDX
+		        ,BRAND_IDX
+		        ,FRANC_IDX
+		        ,DEVICE_IDX
+		        ,DEVICE_CODE
+		        ,DEVICE_NAME
+		        ,DEVICE_TYPE
+		        ,ACTIVE_YN
+		        ,COL_COUNT_TYPE
+		        ,DEVICE_RES_TYPE
+		        ,DEVICE_SITE_TYPE
+		        ,DEVICE_TRANS_TYPE
+		        ,DEL_YN
+		        ,REG_USER
+		        ,REG_DATE
+		        ,MOD_USER
+		        ,MOD_DATE
+		     FROM  kiosk
+		     WHERE DEVICE_CODE
+		     IN
+		     (
+		        SELECT DEVICE_CODE
+		        FROM   schedule_version
+		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+		        GROUP BY DEVICE_CODE
+		     )
+		     AND   IFNULL(DEL_YN, 'N') = 'N'
+		     AND   IFNULL(ACTIVE_YN, 'Y') = 'Y'
+
+	</select>
+
+	<select id="GetProductList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetProductList
+		  DEC : 상품 조회
+		*/
+		 SELECT   OP.DOMAIN_IDX
+				, OP.BRAND_IDX
+				, OP.FRANC_IDX
+				, ORDER_PROD_IDX
+				, PROD_NAME
+				, PROD_DISPLAY_NAME
+				, PROD_CODE
+				, PROD_EN_NAME
+				, PROD_AMOUNT
+				, PROD_STOCK
+				, EVENT_PROD_YN
+				, EVENT_PROD_SCRIPT
+				, PROD_DISCOUNT_AMOUNT
+				, PROD_BARCODE
+				, PROD_IMAGE
+				, WEIGHT
+				, ACTIVE_YN
+				, REG_USER
+				, REG_DATE
+				, MOD_USER
+				, MOD_DATE
+				, DEL_YN
+				, (
+					SELECT SAVE_PATH 
+					FROM   file_content 
+					WHERE  FILE_CONTENT_IDX = OP.PROD_IMAGE
+					AND    IFNULL(DEL_YN, 'N') = 'N'
+				) AS THUMBNAIL_PATH
+				, CONCAT
+				 (
+					#{realPath}, 
+					(
+						SELECT SAVE_PATH 
+						FROM file_content 
+						WHERE FILE_CONTENT_IDX = OP.PROD_IMAGE
+						AND IFNULL(DEL_YN, 'N') = 'N'
+					)
+				) AS REAL_PATH
+		  FROM    order_prod OP
+		  WHERE OP.DOMAIN_IDX = #{domainIdx}
+		  AND   OP.BRAND_IDX = #{brandIdx}
+		  AND   OP.FRANC_IDX = #{francIdx}
+		  AND   IFNULL(OP.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(OP.ACTIVE_YN, 'Y') = 'Y'
+	</select>
+	
+	<select id="GetOptionProductList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetOptionProductList
+		  DEC : 옵션 상품 조회
+		*/
+		 SELECT   OP.DOMAIN_IDX
+				, OP.BRAND_IDX
+				, OP.FRANC_IDX
+				, OPOT.ORDER_PROD_IDX
+				, OPOT.ORDER_SEQ
+				, OPOT.OPTION_PROD_IDX
+				, OPTION_PROD_NAME
+				, OPTION_PROD_DISPLAY_NAME
+				, OPTION_PROD_EN_NAME
+				, OPTION_PROD_AMOUNT
+				, OPTION_PROD_DISCOUNT_AMOUNT
+				, ACTIVE_YN
+				, OP.REG_USER
+				, OP.REG_DATE
+				, OP.MOD_USER
+				, OP.MOD_DATE
+				, OP.DEL_YN
+		  FROM  order_prod_option_target OPOT
+		  LEFT  JOIN option_prod OP
+			    ON OPOT.DOMAIN_IDX = OP.DOMAIN_IDX AND OPOT.BRAND_IDX = OP.BRAND_IDX AND OPOT.FRANC_IDX = OP.FRANC_IDX AND OPOT.OPTION_PROD_IDX = OP.OPTION_PROD_IDX
+		  WHERE OP.DOMAIN_IDX = #{domainIdx}
+		  AND   OP.BRAND_IDX = #{brandIdx}
+		  AND   OP.FRANC_IDX = #{francIdx}
+		  AND   IFNULL(OP.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(OP.ACTIVE_YN, 'Y') = 'Y'
+		  ORDER BY ORDER_PROD_IDX, ORDER_SEQ
+	</select>
+
+	<select id="GetOrderScreenList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetOrderScreenList
+		  DEC : 주문화면 조회
+		*/
+		  SELECT OS.ORDER_SCREEN_IDX
+                ,OS.ORDER_SCREEN_NAME
+  		  FROM  order_screen OS, order_screen_target OST,
+  		  (
+  		     SELECT DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+  		     FROM  kiosk
+  		     WHERE DEVICE_CODE
+  		     IN
+  		     (
+  		        SELECT DEVICE_CODE
+  		        FROM   schedule_version
+  		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+  		     )
+  		     AND IFNULL(DEL_YN, 'N') = 'N'
+  		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+  		     GROUP BY DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+  		  ) K
+
+  		  WHERE IFNULL(OS.DEL_YN, 'N') = 'N'
+          AND   OST.DOMAIN_IDX = K.DOMAIN_IDX
+  		  AND   OST.BRAND_IDX = K.BRAND_IDX
+  		  AND   OST.FRANC_IDX = K.FRANC_IDX
+          AND   OST.DEVICE_IDX = K.DEVICE_IDX
+          AND   OS.DOMAIN_IDX = OST.DOMAIN_IDX
+          AND   OS.BRAND_IDX = OST.BRAND_IDX
+          AND   OS.FRANC_IDX = OST.FRANC_IDX
+          AND   OS.ORDER_SCREEN_IDX = OST.ORDER_SCREEN_IDX
+          GROUP BY OS.ORDER_SCREEN_IDX, OS.ORDER_SCREEN_NAME
+	</select>
+
+	<select id="GetOrderScreenMenuList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetOrderScreenList
+		  DEC : 주문화면 메뉴 조회
+		*/
+		  SELECT OS.ORDER_SCREEN_IDX
+		        ,OS.ORDER_SCREEN_MENU_IDX
+		        ,OS.MENU_NAME
+  		  FROM  order_screen_menu OS, order_screen_target OST,
+  		  (
+  		     SELECT DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+  		     FROM  kiosk
+  		     WHERE DEVICE_CODE
+  		     IN
+  		     (
+  		        SELECT DEVICE_CODE
+  		        FROM   schedule_version
+  		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+  		     )
+  		     AND IFNULL(DEL_YN, 'N') = 'N'
+  		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+  		     GROUP BY DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+  		  ) K
+		  WHERE OST.ORDER_SCREEN_IDX IN
+	      (
+	      	SELECT ORDER_SCREEN_IDX
+	        FROM order_screen
+	        WHERE IFNULL(DEL_YN, 'N') = 'N'
+	        AND DOMAIN_IDX = OST.DOMAIN_IDX
+	        AND BRAND_IDX = OST.BRAND_IDX
+	        AND FRANC_IDX = OST.FRANC_IDX
+	      )
+  		  AND   OST.DOMAIN_IDX = K.DOMAIN_IDX
+  		  AND   OST.BRAND_IDX = K.BRAND_IDX
+  		  AND   OST.FRANC_IDX = K.FRANC_IDX
+          AND   OST.DEVICE_IDX = K.DEVICE_IDX
+          AND   OS.DOMAIN_IDX = OST.DOMAIN_IDX
+          AND   OS.BRAND_IDX = OST.BRAND_IDX
+          AND   OS.FRANC_IDX = OST.FRANC_IDX
+          AND   OS.ORDER_SCREEN_IDX = OST.ORDER_SCREEN_IDX
+          GROUP BY OS.ORDER_SCREEN_IDX, OS.ORDER_SCREEN_MENU_IDX, OS.MENU_NAME
+	</select>
+
+	<select id="GetOrderScreenMenuItemList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+
+          SELECT OS.ORDER_SCREEN_IDX
+		        ,OS.ORDER_SCREEN_MENU_IDX
+            	,OS.ORDER_SCREEN_MENU_ITEM_IDX
+		        ,OS.ORDER_PROD_IDX
+		        ,OS.STATE_CODE
+		        ,OP.PROD_NAME
+	            ,OP.PROD_DISPLAY_NAME
+	            ,OP.PROD_CODE
+	            ,OP.PROD_EN_NAME
+	            ,OP.PROD_AMOUNT
+	            ,OP.PROD_DISCOUNT_AMOUNT
+	            ,OP.PROD_STOCK
+  		  FROM  order_screen_menu_item OS, order_screen_target OST, order_prod OP,
+  		  (
+  		     SELECT DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+  		     FROM  kiosk
+  		     WHERE DEVICE_CODE
+  		     IN
+  		     (
+  		        SELECT DEVICE_CODE
+  		        FROM   schedule_version
+  		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+  		     )
+  		     AND IFNULL(DEL_YN, 'N') = 'N'
+  		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+  		     GROUP BY DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+  		  ) K
+		  WHERE OST.ORDER_SCREEN_IDX IN
+	      (
+	      	SELECT ORDER_SCREEN_IDX
+	        FROM order_screen
+	        WHERE IFNULL(DEL_YN, 'N') = 'N'
+	        AND DOMAIN_IDX = OST.DOMAIN_IDX
+	        AND BRAND_IDX = OST.BRAND_IDX
+	        AND FRANC_IDX = OST.FRANC_IDX
+	      )
+		  AND   IFNULL(OP.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(OP.ACTIVE_YN, 'Y') = 'Y'
+  		  AND   OST.DOMAIN_IDX = K.DOMAIN_IDX
+  		  AND   OST.BRAND_IDX = K.BRAND_IDX
+  		  AND   OST.FRANC_IDX = K.FRANC_IDX
+          AND   OST.DEVICE_IDX = K.DEVICE_IDX
+          AND   OS.DOMAIN_IDX = OST.DOMAIN_IDX
+          AND   OS.BRAND_IDX = OST.BRAND_IDX
+          AND   OS.FRANC_IDX = OST.FRANC_IDX
+          AND   OS.ORDER_SCREEN_IDX = OST.ORDER_SCREEN_IDX
+          AND   OS.DOMAIN_IDX = OP.DOMAIN_IDX
+          AND   OS.BRAND_IDX = OP.BRAND_IDX
+          AND   OS.FRANC_IDX = OP.FRANC_IDX
+          AND   OS.ORDER_PROD_IDX = OP.ORDER_PROD_IDX
+          GROUP BY OS.ORDER_SCREEN_IDX, OS.ORDER_SCREEN_MENU_IDX, OS.ORDER_SCREEN_MENU_ITEM_IDX, OS.ORDER_PROD_IDX
+
+	</select>
+
+	<select id="GetMenuList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetMenuList
+		  DEC : 주문 조회
+		*/
+		  SELECT OSM.DOMAIN_IDX
+		        ,OSM.BRAND_IDX
+		        ,OSM.FRANC_IDX
+		        ,OSM.ORDER_SCREEN_IDX
+		        ,OSM.ORDER_SCREEN_NAME
+		        ,OSM.ORDER_SCREEN_MENU_IDX
+		        ,OSMI.ORDER_SCREEN_MENU_ITEM_IDX
+		        ,OSMI.ORDER_PROD_IDX
+		  FROM
+		  (
+		    SELECT OS.DOMAIN_IDX
+		          ,OS.BRAND_IDX
+		          ,OS.FRANC_IDX
+		          ,OS.ORDER_SCREEN_IDX
+		          ,OS.ORDER_SCREEN_NAME
+		          ,OSM.ORDER_SCREEN_MENU_IDX
+		          ,OSM.PARENT_IDX
+		          ,OSM.MENU_LEVEL
+		          ,OSM.MENU_NAME
+		          ,OSM.MENU_ENG_NAME
+		          ,OSM.ORDER_SEQ
+		    FROM
+		    (
+		       SELECT OS.DOMAIN_IDX
+		             ,OS.BRAND_IDX
+		             ,OS.FRANC_IDX
+		             ,OS.ORDER_SCREEN_IDX
+		             ,OS.ORDER_SCREEN_NAME
+		  		  FROM  order_screen OS, order_screen_target OST,
+		  		  (
+		  		     SELECT DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+		  		     FROM  kiosk
+		  		     WHERE DEVICE_CODE
+		  		     IN
+		  		     (
+		  		        SELECT DEVICE_CODE
+		  		        FROM   schedule_version
+		  		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+				   	    AND    DEVICE_CODE = #{deviceCode}
+		  		     )
+		  		     AND IFNULL(DEL_YN, 'N') = 'N'
+		  		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+		  		     GROUP BY DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+		  		  ) K
+
+		  		WHERE IFNULL(OS.DEL_YN, 'N') = 'N'
+		        AND   OST.DOMAIN_IDX = K.DOMAIN_IDX
+		  		AND   OST.BRAND_IDX = K.BRAND_IDX
+		  		AND   OST.FRANC_IDX = K.FRANC_IDX
+		        AND   OST.DEVICE_IDX = K.DEVICE_IDX
+		        AND   OS.DOMAIN_IDX = OST.DOMAIN_IDX
+		        AND   OS.BRAND_IDX = OST.BRAND_IDX
+		        AND   OS.FRANC_IDX = OST.FRANC_IDX
+		        AND   OS.ORDER_SCREEN_IDX = OST.ORDER_SCREEN_IDX
+		        GROUP BY OS.DOMAIN_IDX, OS.BRAND_IDX, OS.FRANC_IDX, OS.ORDER_SCREEN_IDX, OS.ORDER_SCREEN_NAME
+		      ) OS, order_screen_menu OSM
+		      WHERE OS.DOMAIN_IDX = OSM.DOMAIN_IDX
+		      AND   OS.BRAND_IDX = OSM.BRAND_IDX
+		      AND   OS.FRANC_IDX = OSM.FRANC_IDX
+		      AND   OS.ORDER_SCREEN_IDX = OSM.ORDER_SCREEN_IDX
+		    ) OSM, order_screen_menu_item OSMI
+		    WHERE OSM.DOMAIN_IDX = OSMI.DOMAIN_IDX
+		    AND   OSM.BRAND_IDX = OSMI.BRAND_IDX
+		    AND   OSM.FRANC_IDX = OSMI.FRANC_IDX
+		    AND   OSM.ORDER_SCREEN_IDX = OSMI.ORDER_SCREEN_IDX
+		    AND   OSM.ORDER_SCREEN_MENU_IDX = OSMI.ORDER_SCREEN_MENU_IDX
+	</select>
+
+	<select id="GetNoticeList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql."GetNoticeList"
+		  DEC : 공지 조회(서비스, 사이트 모두 가져와야할지 고민)
+		*/
+		 SELECT   K.DOMAIN_IDX
+				, K.BRAND_IDX
+				, NOTICE_IDX
+				, TITLE
+				, CONTENT
+				, IS_HTML_YN
+				, POPUP_ACTIVE_YN
+				, date_format(POPUP_START_DATE, '%Y%m%d') as POPUP_START_DATE
+				, date_format(POPUP_END_DATE, '%Y%m%d') as POPUP_END_DATE
+				, ACTIVE_YN
+				, date_format(START_DATE, '%Y%m%d') as START_DATE
+				, date_format(END_DATE, '%Y%m%d') as END_DATE
+				, K.FRANC_IDX
+				, BRAND_ONLY_YN
+				, DEL_YN
+				, REG_USER
+				, REG_DATE
+				, MOD_USER
+				, MOD_DATE
+		  FROM    notice N,
+		  (
+		     SELECT DOMAIN_IDX, BRAND_IDX, FRANC_IDX
+		     FROM  kiosk
+		     WHERE DEVICE_CODE
+		     IN
+		     (
+		        SELECT DEVICE_CODE
+		        FROM   schedule_version
+		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+		        GROUP BY DEVICE_CODE
+		     )
+		     AND IFNULL(DEL_YN, 'N') = 'N'
+		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+		     GROUP BY DOMAIN_IDX, BRAND_IDX, FRANC_IDX
+		  ) K
+
+		  WHERE N.DOMAIN_IDX = K.DOMAIN_IDX
+		  AND   N.BRAND_IDX = K.BRAND_IDX
+		  AND   N.FRANC_IDX = K.FRANC_IDX
+		  AND   N.BRAND_ONLY_YN = 'N'
+		  AND   IFNULL(N.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(N.ACTIVE_YN, 'Y') = 'Y'
+		  UNION
+		  SELECT   K.DOMAIN_IDX
+				 , K.BRAND_IDX
+				 , NOTICE_IDX
+				 , TITLE
+				 , CONTENT
+				 , IS_HTML_YN
+				 , POPUP_ACTIVE_YN
+				 , date_format(POPUP_START_DATE, '%Y%m%d') as POPUP_START_DATE
+				 , date_format(POPUP_END_DATE, '%Y%m%d') as POPUP_END_DATE
+				 , ACTIVE_YN
+				 , date_format(START_DATE, '%Y%m%d') as START_DATE
+				 , date_format(END_DATE, '%Y%m%d') as END_DATE
+				 , FRANC_IDX
+				 , BRAND_ONLY_YN
+				 , DEL_YN
+				 , REG_USER
+				 , REG_DATE
+				 , MOD_USER
+				 , MOD_DATE
+		  FROM     notice N,
+		  (
+		     SELECT DOMAIN_IDX, BRAND_IDX
+		     FROM  kiosk
+		     WHERE DEVICE_CODE
+		     IN
+		     (
+		        SELECT DEVICE_CODE
+		        FROM   schedule_version
+		        WHERE  SCHEDULE_VERSION_IDX > #{version}
+		   	    AND    DEVICE_CODE = #{deviceCode}
+		        GROUP BY DEVICE_CODE
+		     )
+		     AND IFNULL(DEL_YN, 'N') = 'N'
+		     AND IFNULL(ACTIVE_YN, 'Y') = 'Y'
+		     GROUP BY DOMAIN_IDX, BRAND_IDX
+		  ) K
+
+		  WHERE N.DOMAIN_IDX = K.DOMAIN_IDX
+		  AND   N.BRAND_IDX = K.BRAND_IDX
+		  AND   N.BRAND_ONLY_YN = 'Y'
+		  AND   IFNULL(N.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(N.ACTIVE_YN, 'Y') = 'Y'
+	</select>
+
+	<select id="GetSoftwareUpdateList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetSoftwareUpdateList
+		  DEC : 플레이어 업데이트
+		*/
+		    SELECT DOMAIN_IDX
+			      ,BRAND_IDX
+			      ,FRANC_IDX
+			      ,DEVICE_IDX
+			      ,D.KIOSK_CLIENT_IDX
+			      ,VERSION
+			      ,CONCAT(#{realPath},#{clientPath},'/',FILE_NAME) as REAL_PATH
+			      ,FILE_NAME
+			      ,CHANGES
+			      ,DETAIL
+			      ,DIST_COUNT
+			      ,DEL_YN
+			FROM   distribute D, kiosk_client KC
+			WHERE  D.KIOSK_CLIENT_IDX = KC.KIOSK_CLIENT_IDX
+			AND    KC.VERSION > #{version}
+			AND    KC.DEL_YN = 'N'
+			AND    (SELECT DEVICE_CODE FROM kiosk K WHERE DOMAIN_IDX =D.DOMAIN_IDX AND BRAND_IDX = D.BRAND_IDX AND FRANC_IDX = D.FRANC_IDX AND DEVICE_IDX = D.DEVICE_IDX  AND IFNULL(K.DEL_YN, 'N') = 'N') = #{deviceCode}
+	</select>
+
+	<select id="RestAPI_OverlapCountOrderProd" parameterType="qss.vo.OrderProdVo" resultType="BigInteger">
+		/*
+		  ID    : restAPI_sql.OrderProd_OverlapCountOrderProd
+		  DEC   : 주문상품 코드 중복체크
+		*/
+		SELECT  ORDER_PROD_IDX
+		FROM    order_prod
+		WHERE   IFNULL(DEL_YN, 'N') = 'N'
+		AND     DOMAIN_IDX = #{domainIdx}
+		AND     BRAND_IDX = #{brandIdx}
+		AND     FRANC_IDX = #{francIdx}
+		AND     PROD_CODE = #{prodCode}
+		<!-- 수정시 필요 -->
+		<if test="orderProdIdx != null and orderProdIdx != '' and orderProdIdx != 0">
+				 ORDER_PROD_IDX != #{orderProdIdx}
+		</if>
+	</select>
+
+	<update id="RestAPI_InsertOrderProd" parameterType="qss.vo.OrderProdVo">
+		/*
+		  ID  : restAPI_sql.RestAPI_InsertOrderProd
+		  DEC : 상품 저장
+		*/
+		<selectKey keyProperty="returnIdx" resultType="biginteger" order="BEFORE">
+			SELECT IFNULL(MAX(ORDER_PROD_IDX) + 1, 1)
+			FROM   order_prod
+			WHERE  DOMAIN_IDX = #{domainIdx}
+			AND    BRAND_IDX = #{brandIdx}
+			AND    FRANC_IDX = #{francIdx}
+		</selectKey>
+		INSERT INTO order_prod (
+		   DOMAIN_IDX
+		  ,BRAND_IDX
+		  ,FRANC_IDX
+		  ,ORDER_PROD_IDX
+		  ,PROD_NAME
+		  ,PROD_DISPLAY_NAME
+		  ,PROD_CODE
+		  ,PROD_EN_NAME
+		  ,PROD_AMOUNT
+		  ,EVENT_PROD_YN
+		  ,EVENT_PROD_SCRIPT
+		  ,PROD_BARCODE
+		  ,REG_USER
+		  ,REG_DATE
+		  ,MOD_USER
+		  ,MOD_DATE
+		  ,PROD_DISCOUNT_AMOUNT
+		  ,PROD_IMAGE
+		  ,DEL_YN
+		  ,ACTIVE_YN
+		) VALUES (
+		   #{domainIdx}
+		  ,#{brandIdx}
+		  ,#{francIdx}
+		  ,#{returnIdx}
+		  ,#{prodName}
+		  ,#{prodDisplayName}
+		  ,#{prodCode}
+		  ,#{prodEnName}
+		  ,#{prodAmount}
+		  ,#{eventProdYn}
+		  ,#{eventProdScript}
+		  ,#{prodBarcode}
+		  , 'admin'
+		  , now()
+		  , 'admin'
+		  , now()
+		  ,#{prodDiscountAmount}
+		  ,'0'
+		  ,'N'
+		  ,#{activeYn}
+		)
+	</update>
+
+	<update id="RestAPI_UpdateOrderProd" parameterType="qss.vo.OrderProdVo">
+		/*
+		  ID  : restAPI_sql.RestAPI_UpdateOrderProd
+		  DEC : 상품 수정
+		*/
+		UPDATE order_prod
+		SET     PROD_NAME = #{prodName}
+			  , PROD_DISPLAY_NAME = #{prodDisplayName}
+			  , PROD_CODE = #{prodCode}
+			  , PROD_EN_NAME = #{prodEnName}
+			  , PROD_AMOUNT = #{prodAmount}
+			  , EVENT_PROD_YN = #{eventProdYn}
+			  , EVENT_PROD_SCRIPT = #{eventProdScript}
+			  , MOD_USER = 'admin'
+			  , MOD_DATE = now()
+			  , PROD_DISCOUNT_AMOUNT = #{prodDiscountAmount}
+			  , ACTIVE_YN = #{activeYn}
+			  , PROD_BARCODE = #{prodBarcode}
+		WHERE   DOMAIN_IDX = #{domainIdx}
+		  AND   BRAND_IDX = #{brandIdx}
+		  AND   FRANC_IDX = #{francIdx}
+		  AND   ORDER_PROD_IDX = #{orderProdIdx}
+	</update>
+
+	<select id="RestAPI_OverlapCountKioskResource" parameterType="qss.vo.KioskResourceVo" resultType="int">
+		/*
+		  ID    : restAPI_sql.RestAPI_OverlapCountKioskResource
+		  DEC   : 리소스 코드 중복체크
+		*/
+		SELECT  COUNT(*)
+		FROM    kiosk_resource
+		WHERE   DOMAIN_IDX = #{domainIdx}
+		AND     BRAND_IDX = #{brandIdx}
+		AND     FRANC_IDX = #{francIdx}
+		AND     DEVICE_IDX = #{deviceIdx}
+		AND     RESOURCE_NAME = #{resourceName}
+	</select>
+
+	<update id="RestAPI_InsertKioskResource" parameterType="qss.vo.KioskResourceVo">
+		/*
+		  ID  : restAPI_sql.RestAPI_InsertKioskResource
+		  DEC : 리소스 저장
+		*/
+		INSERT INTO kiosk_resource (
+		   DOMAIN_IDX
+		  ,BRAND_IDX
+		  ,FRANC_IDX
+		  ,DEVICE_IDX
+		  ,RESOURCE_NAME
+		  ,RESOURCE_VALUE
+		  ,CONNECT_START_TIME
+		  ,REG_USER
+		  ,REG_DATE
+		  ,MOD_USER
+		  ,MOD_DATE
+		) VALUES (
+		   #{domainIdx}
+		  ,#{brandIdx}
+		  ,#{francIdx}
+		  ,#{deviceIdx}
+		  ,#{resourceName}
+		  ,#{resourceValue}
+		  ,now()
+		  ,'admin'
+		  ,now()
+		  ,'admin'
+		  ,now()
+		)
+	</update>
+
+	<update id="RestAPI_UpdateKioskResource" parameterType="qss.vo.KioskResourceVo">
+		/*
+		  ID  : restAPI_sql.RestAPI_UpdateKioskResource
+		  DEC : 리소스 수정
+		*/
+		UPDATE kiosk_resource
+		SET
+			   RESOURCE_VALUE = #{resourceValue}
+			  ,MOD_USER = 'admin'
+			  ,MOD_DATE = now()
+			  <if test='connectStartTimeYn != null and connectStartTimeYn != "" and connectStartTimeYn == "Y"'>
+              ,CONNECT_START_TIME = now()
+              </if>
+		WHERE  DOMAIN_IDX = #{domainIdx}
+		  AND  BRAND_IDX = #{brandIdx}
+		  AND  FRANC_IDX = #{francIdx}
+		  AND  DEVICE_IDX = #{deviceIdx}
+		  AND  RESOURCE_NAME = #{resourceName}
+	</update>
+
+	<!-- 	주문마스터 등록 -->
+	<insert id="InsertData_InsertOrderMaster" parameterType="qss.vo.OrderMasterVo">
+		/*
+		ID : restAPI_sql.InsertData_InsertOrderMaster
+		DEC : 주문마스터 등록
+		*/
+		<selectKey resultType="qss.vo.OrderMasterVo" keyProperty="orderMasterIdx,receiptNo" order="BEFORE">
+		SELECT
+			(
+				SELECT
+					IFNULL(MAX(OM.ORDER_MASTER_IDX) + 1, 1)
+				FROM order_master OM
+					 INNER JOIN kiosk K
+					 ON OM.DOMAIN_IDX = K.DOMAIN_IDX AND OM.BRAND_IDX = K.BRAND_IDX AND OM.FRANC_IDX = K.FRANC_IDX AND OM.DEVICE_IDX = K.DEVICE_IDX
+					 AND K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx}
+					 AND K.DEVICE_CODE = #{deviceCode} AND IFNULL(K.DEL_YN, 'N') = 'N'
+			) AS ORDER_MASTER_IDX
+			,(SELECT
+				IFNULL(MAX(CAST(OM.RECEIPT_NO AS UNSIGNED)) + 1, 1)
+			FROM order_master OM
+				 INNER JOIN kiosk K
+				 ON OM.DOMAIN_IDX = K.DOMAIN_IDX AND OM.BRAND_IDX = K.BRAND_IDX AND OM.FRANC_IDX = K.FRANC_IDX AND OM.DEVICE_IDX = K.DEVICE_IDX
+				 AND K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx}
+				 AND K.DEVICE_CODE = #{deviceCode}  AND IFNULL(K.DEL_YN, 'N') = 'N'
+			WHERE DATE(OM.REG_DATE) = DATE(now())
+			) AS RECEIPT_NO
+	    </selectKey>
+		INSERT INTO order_master
+		(
+			DOMAIN_IDX
+			,BRAND_IDX
+			,FRANC_IDX
+			,DEVICE_IDX
+			,ORDER_MASTER_IDX
+			,RECEIPT_NO
+			,ORDER_DATE
+			,ORDER_TIME
+			,ORDER_AMT
+			,DISC_AMT
+			,PAY_AMT
+			,PAY_TYPE
+			,PAY_PROC_CODE
+			,CARD_AMT
+			,POINT_TYPE_CODE
+			,POINT_USE_AMT
+			,POINT_SAVE_AMT
+			,CALCULATE_DATE
+			,REG_USER
+			,REG_DATE
+			,MOD_USER
+			,MOD_DATE
+		)
+		VALUES
+		(
+			 #{domainIdx}
+			,#{brandIdx}
+			,#{francIdx}
+			,(
+				SELECT
+					DEVICE_IDX
+				FROM kiosk K
+					 WHERE K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx} AND K.DEVICE_CODE = #{deviceCode}
+					 AND IFNULL(K.DEL_YN, 'N') = 'N'
+					 AND IFNULL(K.ACTIVE_YN, 'Y') = 'Y'
+			)
+			,#{orderMasterIdx}
+			,#{receiptNo}
+			,#{orderDate}
+			,#{orderTime}
+			,#{orderAmt}
+			,#{discAmt}
+			,#{payAmt}
+			,#{payType}
+			,#{payProcCode}
+			,#{cardAmt}
+			,#{pointTypeCode}
+			,#{pointUseAmt}
+			,#{pointSaveAmt}
+			,#{calculateDate}
+		    , 'admin'
+		    , now()
+		    , 'admin'
+		    , now()
+		 )
+	</insert>
+
+	<!-- 	주문번호 채번 -->
+	<select id="GetDocNo" parameterType="qss.vo.OrderMasterVo"  resultType="hashmap">
+	/*
+		ID : restAPI_sql.GetDocNo
+		DEC : 주문번호 채번
+		*/
+			SELECT
+				IFNULL(MAX(CAST(OM.RECEIPT_NO AS UNSIGNED)) + 1, 1) AS RECEIPT_NO
+			FROM order_master OM
+				 INNER JOIN kiosk K
+				 ON OM.DOMAIN_IDX = K.DOMAIN_IDX AND OM.BRAND_IDX = K.BRAND_IDX AND OM.FRANC_IDX = K.FRANC_IDX AND OM.DEVICE_IDX = K.DEVICE_IDX
+				 AND K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx}
+				 AND K.DEVICE_CODE = #{deviceCode} AND IFNULL(K.DEL_YN, 'N') = 'N' AND IFNULL(K.ACTIVE_YN, 'Y') = 'Y'
+			WHERE DATE(OM.REG_DATE) = DATE(now())
+	</select>
+
+	<!-- 	주문마스터 수정 -->
+	<update id="InsertData_UpdateOrderDetail" parameterType="qss.vo.OrderMasterVo">
+		/*
+		ID : restAPI_sql.InsertData_UpdateOrderDetail
+		DEC : 주문마스터 수정
+		*/
+			<![CDATA[
+				UPDATE  order_master
+			    SET     ORDER_DATE = #{orderDate},
+					    ORDER_TIME = #{orderTime},
+					    ORDER_AMT = #{orderAmt},
+					    DISC_AMT = #{discAmt},
+					    PAY_AMT = #{payAmt},
+					    PAY_TYPE = #{payType},
+					    PAY_PROC_CODE = #{payProcCode},
+					    CARD_AMT = #{cardAmt},
+					    POINT_TYPE_CODE = #{pointTypeCode},
+					    POINT_USE_AMT = #{pointUseAmt},
+					    POINT_SAVE_AMT = #{pointSaveAmt},
+			            MOD_USER = 'admin',
+			            MOD_DATE = NOW()
+			    WHERE   DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx}
+					    AND DEVICE_IDX = (
+							SELECT
+								DEVICE_IDX
+							FROM kiosk K
+								 WHERE K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx} AND K.DEVICE_CODE = #{deviceCode}
+								 AND IFNULL(K.DEL_YN, 'N') = 'N'
+						)
+					    AND ORDER_MASTER_IDX = #{orderMasterIdx}
+			]]>
+	</update>
+
+	<insert id="InsertData_UpdateOrderItemDetail_bak" parameterType="java.util.List">
+		/*
+		ID : InsertData_UpdateOrderItemDetail
+		DEC : 주문에 대한 주문 아이템  등록
+		*/
+			INSERT INTO order_item
+			(
+				DOMAIN_IDX,           /*도메인일련번호*/
+				BRAND_IDX,            /*서비스일련번호*/
+				FRANC_IDX,            /*사이트일련번호*/
+				DEVICE_IDX,           /*단말일련번호*/
+				ORDER_MASTER_IDX,     /*주문마스터 일련번호*/
+				ORDER_ITEM_IDX,		  /*주문아이템 일련번호*/
+				ORDER_PROD_IDX,		  /*상품일련번호*/
+				QUANTITY,			  /*수량*/
+				UNIT_PRICE,			  /*가격*/
+				ORDER_SEQ,			  /*정렬순서*/
+				REG_USER,
+	            REG_DATE,
+	            MOD_USER,
+	            MOD_DATE
+			)
+			VALUES
+			<foreach collection="list" item="item" separator=" , " >
+			(
+				#{item.domainIdx},
+				#{item.brandIdx},
+				#{item.francIdx},
+				(
+					SELECT
+						DEVICE_IDX
+					FROM kiosk K
+						 WHERE K.DOMAIN_IDX = #{item.domainIdx} AND K.BRAND_IDX = #{item.brandIdx} AND K.FRANC_IDX = #{item.francIdx} AND K.DEVICE_CODE = #{item.deviceCode}
+						 AND IFNULL(K.DEL_YN, 'N') = 'N'
+				),
+				#{item.orderMasterIdx},
+				(
+					SELECT
+						ORDER_ITEM_IDX
+					FROM
+					(
+						SELECT
+							IFNULL(MAX(ORDER_ITEM_IDX) + 1, 1) AS ORDER_ITEM_IDX
+						FROM order_item
+						WHERE DOMAIN_IDX = #{item.domainIdx} AND BRAND_IDX = #{item.brandIdx} AND FRANC_IDX = #{item.francIdx}
+						AND DEVICE_IDX = (
+								SELECT
+									DEVICE_IDX
+								FROM kiosk K
+									 WHERE K.DOMAIN_IDX = #{item.domainIdx} AND K.BRAND_IDX = #{item.brandIdx} AND K.FRANC_IDX = #{item.francIdx} AND K.DEVICE_CODE = #{item.deviceCode}
+									 AND IFNULL(K.DEL_YN, 'N') = 'N'
+							)
+						AND ORDER_MASTER_IDX = #{item.orderMasterIdx}
+					) TMP
+				),
+				#{item.orderProdIdx},
+				#{item.quantity},
+				#{item.unitPrice},
+				#{item.orderSeq},
+	            #{item.regUser},
+	            NOW(),
+	            #{item.modUser},
+	            NOW()
+			)
+			</foreach>
+	</insert>
+
+
+	<insert id="InsertData_UpdateOrderItemDetail" parameterType="qss.vo.OrderItemVo">
+		/*
+		ID : InsertData_UpdateOrderItemDetail
+		DEC : 주문에 대한 주문 아이템  등록
+		*/
+			<selectKey keyProperty="orderItemIdx" resultType="biginteger" order="BEFORE">
+				SELECT
+					IFNULL(MAX(ORDER_ITEM_IDX) + 1, 1)
+				FROM order_item
+				WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx}
+				AND DEVICE_IDX = (
+						SELECT
+							DEVICE_IDX
+						FROM kiosk K
+							 WHERE K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx} AND K.DEVICE_CODE = #{deviceCode}
+							 AND IFNULL(K.DEL_YN, 'N') = 'N'
+					)
+				AND ORDER_MASTER_IDX = #{orderMasterIdx}
+			</selectKey>
+
+			INSERT INTO order_item
+			(
+				DOMAIN_IDX,           /*도메인일련번호*/
+				BRAND_IDX,            /*서비스일련번호*/
+				FRANC_IDX,            /*사이트일련번호*/
+				DEVICE_IDX,           /*단말일련번호*/
+				ORDER_MASTER_IDX,     /*주문마스터 일련번호*/
+				ORDER_ITEM_IDX,		  /*주문아이템 일련번호*/
+				ORDER_PROD_IDX,		  /*상품일련번호*/
+				QUANTITY,			  /*수량*/
+				UNIT_PRICE,			  /*가격*/
+				ORDER_SEQ,			  /*정렬순서*/
+				REG_USER,
+	            REG_DATE,
+	            MOD_USER,
+	            MOD_DATE
+			)
+			VALUES
+			(
+				#{domainIdx},
+				#{brandIdx},
+				#{francIdx},
+				(
+					SELECT
+						DEVICE_IDX
+					FROM kiosk K
+						 WHERE K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx} AND K.DEVICE_CODE = #{deviceCode}
+						 AND IFNULL(DEL_YN, 'N') = 'N'
+				),
+				#{orderMasterIdx},
+				#{orderItemIdx},
+				#{orderProdIdx},
+				#{quantity},
+				#{unitPrice},
+				#{orderSeq},
+	            'admin',
+	            NOW(),
+	            'admin',
+	            NOW()
+			)
+			 ON DUPLICATE KEY
+			 UPDATE
+				ORDER_PROD_IDX 	=	VALUES(ORDER_PROD_IDX),
+				QUANTITY		=	VALUES(QUANTITY),
+				UNIT_PRICE		=	VALUES(UNIT_PRICE),
+				MOD_USER 		=	VALUES(MOD_USER),
+				MOD_DATE		= 	NOW()
+	</insert>
+
+
+	<delete id="InsertData_DeleteOrderItemDetail" parameterType="qss.vo.OrderItemVo">
+		/*
+		ID : InsertData_DeleteOrderItemDetail
+		DEC : 주문에 대한 주문 아이템  삭제
+		*/
+			DELETE FROM order_item
+			WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx}
+				  AND DEVICE_IDX = (
+						SELECT
+							DEVICE_IDX
+						FROM kiosk K
+							 WHERE K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx} AND K.DEVICE_CODE = #{deviceCode}
+							 AND IFNULL(DEL_YN, 'N') = 'N'
+					)
+				  AND ORDER_MASTER_IDX = #{orderMasterIdx}
+	</delete>
+
+
+	<select id="GetOrderList" parameterType="qss.vo.RestAPIVo" resultType="hashMap">
+		/*
+		  ID  : restAPI_sql.GetOrderList
+		  DEC : 결제정보 조회
+		*/
+		SELECT   F.DOMAIN_IDX
+				,F.BRAND_IDX
+				,F.FRANC_IDX
+				,F.DEVICE_IDX
+				,F.ORDER_MASTER_IDX
+				,F.RECEIPT_NO
+				,F.ORDER_DATE
+				,F.ORDER_TIME
+				,F.ORDER_AMT
+				,F.DISC_AMT
+				,F.PAY_AMT
+				,F.PAY_TYPE
+				,F.PAY_PROC_CODE
+				,F.CARD_AMT
+				,F.POINT_TYPE_CODE
+				,F.POINT_USE_AMT
+				,F.POINT_SAVE_AMT
+				,F.CALCULATE_DATE
+				,F.REG_USER
+				,F.REG_DATE
+				,F.MOD_USER
+				,F.MOD_DATE
+		  FROM  order_master F,
+		  (
+		     SELECT DOMAIN_IDX, BRAND_IDX, FRANC_IDX, DEVICE_IDX
+		     FROM  kiosk
+			 WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FRANC_IDX = #{francIdx} AND DEVICE_CODE = #{deviceCode}
+			 AND IFNULL(DEL_YN, 'N') = 'N'
+		  ) K
+
+		  WHERE F.DOMAIN_IDX = K.DOMAIN_IDX
+		  AND   F.BRAND_IDX = K.BRAND_IDX
+		  AND   F.FRANC_IDX = K.FRANC_IDX
+		  AND   F.DEVICE_IDX = K.DEVICE_IDX
+		  AND   F.ORDER_DATE	<![CDATA[>=]]> #{searchDay} AND   F.ORDER_DATE	<![CDATA[<=]]> #{endDay}
+	</select>
+
+	<!-- 	메인 스케줄 정보 조회 -->
+	<select id="GetMainSchedule" parameterType="qss.vo.RestAPIVo"  resultType="qss.vo.MainScheduleVo">
+	/*
+		ID : restAPI_sql.GetMainSchedule
+		DEC : 메인 스케줄 정보 조회
+		*/
+			SELECT
+				MS.DOMAIN_IDX,
+				MS.BRAND_IDX,
+				MS.MAIN_SCHEDULE_IDX,
+				MS.MAIN_SCHEDULE_NAME,
+				MS.START_DATE,
+				MS.END_DATE,
+				MS.ACTIVE_YN,
+				MS.DEL_YN,
+				MS.REG_USER,
+	            MS.REG_DATE,
+	            MS.MOD_USER,
+	            MS.MOD_DATE,
+	            DAY_OF_WEEK,
+				SCHEDULE_TYPE,
+				EVENT_TYPE,
+				COUNT_TYPE,
+				START_TIME,
+				END_TIME,
+				K.DEVICE_IDX
+			FROM main_schedule MS
+			  INNER JOIN schedule_target ST
+			  ON MS.DOMAIN_IDX = ST.DOMAIN_IDX AND MS.BRAND_IDX = ST.BRAND_IDX AND MS.MAIN_SCHEDULE_IDX = ST.MAIN_SCHEDULE_IDX
+			  INNER JOIN kiosk K
+			  ON ST.DOMAIN_IDX = K.DOMAIN_IDX AND ST.BRAND_IDX = K.BRAND_IDX AND ST.DEVICE_IDX = K.DEVICE_IDX
+			  AND K.DEVICE_CODE
+			     IN
+			     (
+			        SELECT DEVICE_CODE
+			        FROM   schedule_version
+			        WHERE  SCHEDULE_VERSION_IDX > #{version}
+			   	    AND    DEVICE_CODE = #{deviceCode}
+			        GROUP BY DEVICE_CODE
+			     )
+			   AND IFNULL(K.DEL_YN, 'N') = 'N'
+	      	WHERE ifnull(MS.ACTIVE_YN, 'Y') = 'Y' AND ifnull(MS.DEL_YN, 'N') = 'N'
+	</select>
+	
+	<!-- 	제어 스케줄 정보 조회 -->
+	<select id="GetControlSchedule" parameterType="qss.vo.RestAPIVo"  resultType="qss.vo.ControlScheduleVo">
+	/*
+		ID : restAPI_sql.GetControlSchedule		
+		DEC : 제어 스케줄 정보 조회
+		*/
+			SELECT
+				MS.DOMAIN_IDX,
+				MS.BRAND_IDX,
+				MS.CONTROL_SCHEDULE_IDX,
+				MS.CONTROL_SCHEDULE_NAME,
+				MS.START_DATE,
+				MS.END_DATE,
+				MS.ACTIVE_YN,
+				MS.DEL_YN,
+				MS.REG_USER,
+	            MS.REG_DATE,
+	            MS.MOD_USER,
+	            MS.MOD_DATE,
+				DAY_OF_WEEK,
+				CONTROL_TYPE,
+				CONTROL_VALUE,
+				START_TIME,
+				K.DEVICE_IDX
+			FROM control_schedule MS
+			  INNER JOIN control_schedule_target ST
+			  ON MS.DOMAIN_IDX = ST.DOMAIN_IDX AND MS.BRAND_IDX = ST.BRAND_IDX AND MS.CONTROL_SCHEDULE_IDX = ST.CONTROL_SCHEDULE_IDX
+			  INNER JOIN kiosk K
+			  ON ST.DOMAIN_IDX = K.DOMAIN_IDX AND ST.BRAND_IDX = K.BRAND_IDX AND ST.DEVICE_IDX = K.DEVICE_IDX
+			  AND K.DEVICE_CODE
+			     IN
+			     (
+			        SELECT DEVICE_CODE
+			        FROM   schedule_version
+			        WHERE  SCHEDULE_VERSION_IDX > #{version}
+			   	    AND    DEVICE_CODE = #{deviceCode}
+			        GROUP BY DEVICE_CODE
+			     )
+			   AND IFNULL(K.DEL_YN, 'N') = 'N'
+	      	WHERE ifnull(MS.ACTIVE_YN, 'Y') = 'Y' AND ifnull(MS.DEL_YN, 'N') = 'N'
+	</select>
+
+
+	<!-- 	스크린 정보 조회 -->
+	<select id="GetSreen" parameterType="hashMap"  resultType="qss.vo.ScheduleScreenVo">
+		/*
+			ID : restAPI_sql.GetSreen
+			DEC : 스크린 리스트 조회
+			*/
+			SELECT
+		         SSC.MAIN_SCHEDULE_IDX
+		        ,SSC.DOMAIN_IDX
+		        ,SSC.BRAND_IDX
+				,SSC.SCREEN_IDX 		/*스크린 일련번호*/
+		        ,SSC.ORDER_SEQ 		/*정렬순서*/
+		        ,SCREEN_TYPE
+		        ,SCREEN_PLAY_TIME
+				,IFNULL(SC.SCREEN_NAME, O.OPERATION_NAME) AS SCREEN_NAME		/*스크린 명*/
+		        ,IFNULL(SC.ROW_CNT, O.ROW_CNT) AS ROW_CNT       /*행갯수*/
+		        ,IFNULL(SC.COL_CNT, O.COL_CNT) COL_CNT       /*열갯수*/
+		        ,IFNULL(SC.PLAY_TIME, O.PLAY_TIME)	AS PLAY_TIME		/*플레이시간*/
+		        ,IFNULL(SC.RESOLUTION_X, O.RESOLUTION_X) RESOLUTION_X  /*해상도X좌표*/
+		        ,IFNULL(SC.RESOLUTION_Y, O.RESOLUTION_Y) RESOLUTION_Y /*해상도Y좌표*/
+	        FROM schedule_screen SSC
+			LEFT JOIN screen SC
+				ON SSC.DOMAIN_IDX = SC.DOMAIN_IDX AND SSC.BRAND_IDX = SC.BRAND_IDX AND SSC.SCREEN_IDX = SC.SCREEN_IDX AND SSC.SCREEN_TYPE = 'S'
+        	LEFT JOIN operation O
+				ON SSC.SCREEN_IDX = O.OPERATION_ID AND SSC.SCREEN_TYPE = 'O'
+			WHERE
+			SSC.DOMAIN_IDX = #{domainIdx} AND SSC.BRAND_IDX = #{brandIdx}
+			AND ifnull(SSC.DEL_YN, 'N') = 'N'
+			AND SSC.MAIN_SCHEDULE_IDX = #{mainScheduleIdx}
+			ORDER BY SSC.ORDER_SEQ
+	</select>
+
+
+
+	<!-- 	스크린 레이어 조회 -->
+	<select id="GetSreenLayer" parameterType="hashMap"  resultType="qss.vo.ScreenLayerVo">
+		/*
+			ID : restAPI_sql.GetSreenLayer
+			DEC : 스크린 레이어 조회
+			*/
+			SELECT
+		        SSC.MAIN_SCHEDULE_IDX
+		        ,SL.DOMAIN_IDX
+		        ,SL.BRAND_IDX
+				,SL.SCREEN_IDX 		    /*스크린 일련번호*/
+		        ,SL.SCREEN_LAYER_IDX
+		        ,SL.SCREEN_LAYER_NAME
+		        ,SL.START_COL
+		        ,SL.START_ROW
+		        ,SL.COL_SPAN
+		        ,SL.ROW_SPAN
+		        ,SL.PLAY_TIME
+		        ,SL.ORDER_SEQ
+			FROM schedule_screen SSC
+		            INNER JOIN screen SC ON SSC.DOMAIN_IDX = SC.DOMAIN_IDX AND SSC.BRAND_IDX = SC.BRAND_IDX AND SSC.SCREEN_IDX = SC.SCREEN_IDX AND SSC.SCREEN_TYPE = 'S'
+		            INNER JOIN screen_layer SL ON SSC.DOMAIN_IDX =SL.DOMAIN_IDX AND SSC.BRAND_IDX = SL.BRAND_IDX AND SSC.SCREEN_IDX = SL.SCREEN_IDX
+			WHERE
+				SSC.DOMAIN_IDX = #{domainIdx} AND SSC.BRAND_IDX = #{brandIdx}
+				AND ifnull(SSC.DEL_YN, 'N') = 'N'
+				AND SC.SCREEN_IDX = #{screenIdx}
+				AND SSC.MAIN_SCHEDULE_IDX = #{mainScheduleIdx}
+				AND SSC.SCREEN_TYPE = 'S'
+
+	</select>
+
+
+
+	<!-- 레이어 컨텐트 조회 -->
+	<select id="GetLayerContent" parameterType="hashMap"  resultType="qss.vo.LayerContentVo">
+		/*
+			ID : restAPI_sql.GetLayerContent
+			DEC : 레이어 컨텐츠 조회
+			*/
+			 SELECT
+		   		DOMAIN_IDX,
+				BRAND_IDX,
+				SCREEN_IDX,
+				SCREEN_LAYER_IDX,
+				LAYER_CONTENT_IDX,
+				FILE_CONTENT_IDX,
+				PLAY_TIME,
+				ORDER_SEQ,
+				DEL_YN,
+				REG_USER,
+				REG_DATE,
+				MOD_USER,
+				MOD_DATE
+		    FROM layer_content
+		   WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+		    AND SCREEN_IDX = #{screenIdx}
+		    AND SCREEN_LAYER_IDX = #{screenLayerIdx}
+		    AND IFNULL(DEL_YN, 'N') = 'N'
+<!-- 		    <foreach collection="layerIdxArray" item="screenLayerIdx"  open="(" close=")" separator=","> -->
+<!-- 	            #{screenLayerIdx} -->
+<!-- 	        </foreach> -->
+	</select>
+
+
+
+	<!-- 레이어 컨텐트 조회 -->
+	<select id="GetFileContent" parameterType="java.util.List"  resultType="qss.vo.UploadVo">
+		/*
+			ID : restAPI_sql.GetFileContent
+			DEC : 파일 컨텐츠 조회
+			*/
+			 SELECT
+		   		FILE_CONTENT_IDX
+			  , FILE_NAME
+			  , FILE_SAVE_NAME
+			  , SAVE_PATH
+			  , THUMBNAIL_PATH
+			  , FILE_SIZE
+			  , CHECK_SUM
+			  , PLAY_TIME
+			  , REG_USER
+			  , REG_DATE
+			  , MOD_USER
+			  , MOD_DATE
+			  , CONCAT(#{item.realPath}, SAVE_PATH) AS REAL_PATH
+			  , CONT_TYPE
+		    FROM file_content
+		   WHERE ifnull(DEL_YN, 'N') = 'N'
+		   AND   FILE_CONTENT_IDX IN
+		   (
+		   <foreach collection="list" item="item" separator=" , " >
+		  		#{item.fileContentIdx}
+		   </foreach>
+		   )
+	</select>
+
+	<!-- 이벤트 컨텐츠  목록 조회 -->
+	<select id="GetEventContentList" parameterType="qss.vo.RestAPIVo"  resultType="qss.vo.EventContentVo">
+		/*
+			ID : restAPI_sql.GetEventContentList
+			DEC : 이벤트 컨텐츠 목록 조회
+			*/
+			 SELECT
+		   		EC.EVENT_CONTENT_IDX,
+				EC.FILE_CONTENT_IDX,
+				EC.START_DATE,
+				EC.END_DATE,
+				EC.EVENT_TAG_LIST,
+				EC.DEL_YN,
+				EC.ACTIVE_YN,
+				EC.REG_USER,
+				EC.REG_DATE,
+				EC.MOD_USER,
+				EC.MOD_DATE,
+			    FC.FILE_NAME,
+			    FC.FILE_SAVE_NAME,
+			    FC.SAVE_PATH,
+			    FC.THUMBNAIL_PATH,
+			    FC.FILE_SIZE,
+			    FC.CHECK_SUM,
+			    FC.PLAY_TIME,
+			    CONCAT(#{realPath}, FC.SAVE_PATH) AS REAL_PATH
+		    FROM event_content EC
+		    INNER JOIN file_content FC ON EC.FILE_CONTENT_IDX = FC.FILE_CONTENT_IDX
+		   WHERE ifnull(EC.DEL_YN, 'N') = 'N' AND ifnull(EC.ACTIVE_YN, 'Y') = 'Y'
+		   AND   EC.EVENT_CONTENT_IDX IN
+		   (
+				SELECT EVENT_CONTENT_IDX FROM event_content_kiosk 
+	        	WHERE DEVICE_IDX IN (
+					SELECT DEVICE_IDX FROM kiosk WHERE DEVICE_CODE = #{deviceCode} 
+	            )
+            )
+	</select>
+
+
+	<select id="GetLastSoftVersion" parameterType="qss.vo.RestAPIVo" resultType="String">
+		/*
+		  ID  : restAPI_sql."GetLastSoftVersion"
+		  DEC : 최종버전 조회
+		*/
+		SELECT MAX(VERSION)
+        FROM   distribute D, kiosk_client KC
+		WHERE  D.KIOSK_CLIENT_IDX = KC.KIOSK_CLIENT_IDX
+		AND    (SELECT DEVICE_CODE FROM kiosk WHERE DOMAIN_IDX =D.DOMAIN_IDX AND BRAND_IDX = D.BRAND_IDX AND FRANC_IDX = D.FRANC_IDX AND DEVICE_IDX = D.DEVICE_IDX) = #{deviceCode}
+	</select>
+
+	<select id="GetLastVersion" parameterType="qss.vo.RestAPIVo" resultType="int">
+		/*
+		  ID  : restAPI_sql.GetLastVersion
+		  DEC : 최종버전 조회
+		*/
+		SELECT ifnull(MAX(SCHEDULE_VERSION_IDX), 0)
+        FROM   schedule_version
+        WHERE  1 = 1
+        AND    DEVICE_CODE = #{deviceCode}
+        <if test="caseString != null and caseString != '' and caseString == 'GetNoticeList'">
+             AND SCHEDULE_TYPE = 'SCH0009'
+        </if>
+        <if test="caseString != null and caseString != '' and caseString == 'GetScreenScheduleList'">
+             AND SCHEDULE_TYPE IN ('SCH0001', 'SCH0002', 'SCH0010')
+        </if>
+	</select>
+
+
+	<!-- 	주문마스터 히스토리 등록 -->
+	<insert id="InsertData_InsertOrderMasterHistory" parameterType="qss.vo.OrderHistoryVo">
+		/*
+		ID : restAPI_sql.InsertData_InsertOrderMasterHistory
+		DEC : 주문마스터 히스토리 등록
+		*/
+		<selectKey resultType="qss.vo.OrderHistoryVo" keyProperty="orderHistoryIdx" order="BEFORE">
+		SELECT
+			(
+				SELECT
+					IFNULL(MAX(OM.ORDER_HISTORY_IDX) + 1, 1)
+				FROM order_history OM
+					 INNER JOIN kiosk K
+					 ON OM.DOMAIN_IDX = K.DOMAIN_IDX AND OM.BRAND_IDX = K.BRAND_IDX AND OM.FRANC_IDX = K.FRANC_IDX AND OM.DEVICE_IDX = K.DEVICE_IDX
+					 AND K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx}
+					 AND K.DEVICE_CODE = #{deviceCode} AND IFNULL(K.DEL_YN, 'N') = 'N'
+			) AS ORDER_HISTORY_IDX
+	    </selectKey>
+		INSERT INTO order_history
+		(
+			DOMAIN_IDX
+			,BRAND_IDX
+			,FRANC_IDX
+			,DEVICE_IDX
+			,ORDER_MASTER_IDX
+			,ORDER_HISTORY_IDX
+			,RECEIPT_NO
+			,ORDER_DATE
+			,ORDER_TIME
+			,ORDER_AMT
+			,DISC_AMT
+			,PAY_AMT
+			,PAY_TYPE
+			,PAY_PROC_CODE
+			,CARD_AMT
+			,POINT_TYPE_CODE
+			,POINT_USE_AMT
+			,POINT_SAVE_AMT
+			,CALCULATE_DATE
+			,CALCULATE_YN
+			,REG_USER
+			,REG_DATE
+			,MOD_USER
+			,MOD_DATE
+		)
+		VALUES
+		(
+			 #{domainIdx}
+			,#{brandIdx}
+			,#{francIdx}
+			,(
+				SELECT
+					DEVICE_IDX
+				FROM kiosk K
+					 WHERE K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx} AND K.FRANC_IDX = #{francIdx} AND K.DEVICE_CODE = #{deviceCode}
+					 AND IFNULL(K.DEL_YN, 'N') = 'N'
+			)
+			,#{orderMasterIdx}
+			,#{orderHistoryIdx}
+			,#{receiptNo}
+			,#{orderDate}
+			,#{orderTime}
+			,#{orderAmt}
+			,#{discAmt}
+			,#{payAmt}
+			,#{payType}
+			,#{payProcCode}
+			,#{cardAmt}
+			,#{pointTypeCode}
+			,#{pointUseAmt}
+			,#{pointSaveAmt}
+			,#{calculateDate}
+			, 'N'
+		    , 'admin'
+		    , now()
+		    , 'admin'
+		    , now()
+		 )
+	</insert>
+
+
+	<select id="RestAPI_SelectKioskResource" parameterType="qss.vo.KioskResourceVo" resultType="String">
+		/*
+		  ID    : restAPI_sql.RestAPI_SelectKioskResource
+		  DEC   : 접속시간 update 필요 여부 체크 조회
+		*/
+		<![CDATA[
+		SELECT
+			CASE
+		    	WHEN TIMESTAMPDIFF(SECOND, MAX(MOD_DATE), now()) > 60 OR MAX(MOD_DATE) = null
+		    	THEN 'Y'
+		    	ELSE 'N'
+		  	END CONNECT_YN
+		FROM    kiosk_resource
+		WHERE   DOMAIN_IDX = #{domainIdx}
+		AND     BRAND_IDX = #{brandIdx}
+		AND     FRANC_IDX = #{francIdx}
+		AND     DEVICE_IDX = #{deviceIdx}
+		]]>
+	</select>
+	
+	<select id="RestAPI_OptionCodeOptionIdx" parameterType="qss.vo.OrderProdVo" resultType="BigInteger">
+		/*
+		  ID    : restAPI_sql.RestAPI_OptionCodeOptionIdx
+		  DEC   : 옵션 코드로 옵션 idx조회
+		*/
+		SELECT   OPTION_PROD_IDX
+		  FROM  option_prod OP
+		  WHERE OP.DOMAIN_IDX = #{domainIdx}
+		  AND   OP.BRAND_IDX = #{brandIdx}
+		  AND   OP.FRANC_IDX = #{francIdx}
+		  AND   IFNULL(OP.DEL_YN, 'N') = 'N'
+		  AND   IFNULL(OP.ACTIVE_YN, 'Y') = 'Y'
+		  AND   OPTION_PROD_CODE = #{optionProdCode}
+	</select>
+	
+	
+
+</mapper>

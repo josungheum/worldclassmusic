@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Contents">
+	<resultMap type="qss.vo.UploadVo" id="CmsqResult" />
+
+	<select id="Contents_SearchTree" parameterType="hashmap" resultType="hashmap">
+		/*
+		  ID  : contents_sql.Contents_SearchTree
+		  DEC : 좌측 메뉴 조회
+		*/
+		<!-- 시스템 관라지 일경우 -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+			SELECT  '1' AS DEPTH
+				  , 'DOMAIN' AS DEPTH_NAME
+				  , DOMAIN_IDX AS IDX
+				  , DOMAIN_NAME AS NAME
+				  , '0' AS PARENT_IDX
+			FROM DOMAIN
+			UNION ALL
+			SELECT  '2'+GROUP_DEPTH
+				  , 'GROUP'
+				  , CONCAT(DOMAIN_IDX, '_', GROUP_IDX)
+				  , GROUP_NAME
+				  , CONCAT(DOMAIN_IDX, if( PARENT_GROUP_IDX = '', '', CONCAT('_', PARENT_GROUP_IDX)))
+			FROM    FILE_CONTENT_GROUP
+			WHERE   ifnull(DEL_YN, 'N') = 'N'
+			AND DOMAIN_IDX =  #{domainIdx} AND USERS_IDX = #{USERS_IDX}
+			ORDER BY DEPTH, NAME ASC
+		</if>
+
+		<!-- 시스템 관라지가 아닐경우(서비스, 매장 관리자) -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+			SELECT  '1' AS DEPTH
+				  , 'DOMAIN' AS DEPTH_NAME
+				  , DOMAIN_IDX AS IDX
+				  , DOMAIN_NAME AS NAME
+				  , '0' AS PARENT_IDX
+			FROM DOMAIN
+			UNION ALL
+			SELECT  '2'+GROUP_DEPTH
+				  , 'GROUP'
+				  , CONCAT(DOMAIN_IDX, '_', GROUP_IDX)
+				  , GROUP_NAME
+				  , CONCAT(DOMAIN_IDX, if( PARENT_GROUP_IDX = '', '', CONCAT('_', PARENT_GROUP_IDX)))
+			FROM    FILE_CONTENT_GROUP
+			WHERE   ifnull(DEL_YN, 'N') = 'N'
+			AND DOMAIN_IDX =  #{domainIdx} AND USERS_IDX = #{USERS_IDX}
+			ORDER BY DEPTH, NAME ASC
+		</if>
+	</select>
+	
+	<select id="Contents_GroupList" parameterType="qss.vo.UploadVo" resultType="qss.vo.UploadVo">
+	/*
+	ID : contents_sql.Contents_GroupList
+	DEC : 컨텐츠 그룹 리스트 조회
+	*/
+	<include refid="Common.BeforeSQL"/>
+		SELECT GROUP_IDX, 
+				GROUP_NAME,
+		        (SELECT COUNT(GROUP_IDX) FROM FILE_CONTENT_GROUP WHERE DEL_YN='N' AND PARENT_GROUP_IDX = A.GROUP_IDX) AS groupCnt,
+		        (SELECT COUNT(FILE_CONTENT_IDX) FROM FILE_CONTENT WHERE DEL_YN='N' AND GROUP_IDX = A.GROUP_IDX) AS fileCnt,
+		        date_format(MOD_DATE, '%Y-%m-%d') AS MOD_DATE
+		FROM FILE_CONTENT_GROUP A
+		WHERE A.DEL_YN = 'N'
+			AND DOMAIN_IDX = #{domainIdx} AND USERS_IDX = #{USERS_IDX}
+		<if test="GROUP_IDX == null or GROUP_IDX == '' or GROUP_IDX == 0">
+			AND PARENT_GROUP_IDX = ''
+		</if>
+		<if test="GROUP_IDX != null and GROUP_IDX != '' and GROUP_IDX != 0">
+			AND PARENT_GROUP_IDX = #{GROUP_IDX}
+		</if>
+	<include refid="Common.AfterSQL"/>
+	</select>
+
+
+	<select id="Contents_GroupListCnt" parameterType="qss.vo.UploadVo" resultType="int">
+		/*
+		  ID  : contents_sql.Contents_GroupListCnt
+		  DEC : 컨텐츠 그룹 리스트 Cnt 조회
+		*/
+			 SELECT COUNT(GROUP_IDX)
+			 FROM FILE_CONTENT_GROUP A
+			WHERE A.DEL_YN = 'N'
+				AND DOMAIN_IDX = #{domainIdx} AND USERS_IDX = #{USERS_IDX}
+				<if test="GROUP_IDX == null or GROUP_IDX == '' or GROUP_IDX == 0">
+					AND PARENT_GROUP_IDX = ''
+				</if>
+				<if test="GROUP_IDX != null and GROUP_IDX != '' and GROUP_IDX != 0">
+					AND PARENT_GROUP_IDX = #{GROUP_IDX}
+				</if>
+	</select>
+	
+	<insert id="Contents_CreateGroup" parameterType="qss.vo.UploadVo">
+		<selectKey resultType="String" keyProperty="returnGroupIdx" order="BEFORE">
+			SELECT IFNULL(MAX(CONVERT(GROUP_IDX, UNSIGNED)) + 1, '1')
+			FROM   FILE_CONTENT_GROUP
+	    </selectKey>
+		INSERT INTO FILE_CONTENT_GROUP(GROUP_IDX, DOMAIN_IDX, USERS_IDX, PARENT_GROUP_IDX, GROUP_NAME, GROUP_DEPTH, ACTIVE_YN, REG_USER, REG_DATE, MOD_USER, MOD_DATE, DEL_YN)
+		VALUES(
+				#{returnGroupIdx},
+				#{DOMAIN_IDX},
+				#{USERS_IDX},
+				#{PARENT_GROUP_IDX},
+				#{GROUP_NAME},
+				#{GROUP_DEPTH},
+				'Y',
+				#{regUser},
+				now(),
+				#{regUser},
+				now(),
+				'N'
+				)
+	</insert>
+	
+	<select id="Contents_GetUserIdx" parameterType="qss.vo.UploadVo" resultType="String">
+		/*
+		  ID  : contents_sql.Contents_GetUserIdx
+		  DEC : usersIdx 조회
+		*/
+			 SELECT USERS_IDX
+			 FROM USERS
+			WHERE DEL_YN = 'N'
+				AND ID = #{id}
+	</select>
+	
+	<select id="Contents_GetGroup" parameterType="qss.vo.UploadVo" resultType="qss.vo.UploadVo">
+		/*
+		  ID  : contents_sql.Contents_GetGroup
+		  DEC : Group 상세 조회
+		*/
+			SELECT GROUP_IDX,
+					GROUP_NAME,
+					GROUP_DEPTH
+			FROM FILE_CONTENT_GROUP
+			WHERE DEL_YN = 'N'
+				AND GROUP_IDX = #{groupIdx}
+	</select>
+	
+	<update id="Contents_UpdateGroup"  parameterType="qss.vo.UploadVo" >
+		/*
+		  ID  : contents_sql.Contents_UpdateGroup
+		  DEC : 그룹 수정
+		*/
+		UPDATE FILE_CONTENT_GROUP
+		SET    GROUP_NAME = #{GROUP_NAME}
+		WHERE GROUP_IDX = #{GROUP_IDX}
+	</update>
+	
+	<update id="Contents_DeleteGroup"  parameterType="qss.vo.UploadVo" >
+		/*
+		  ID  : contents_sql.Contents_DeleteGroup
+		  DEC : 그룹 삭제
+		*/
+		UPDATE FILE_CONTENT_GROUP
+		SET    DEL_YN = 'Y'
+		     , MOD_USER = #{modUser}
+		     , MOD_DATE = now()
+		 WHERE GROUP_IDX IN
+		<foreach collection="checkboxArr" item="groupIdx"  open="(" close=")" separator=",">
+            #{groupIdx}
+        </foreach>
+
+	</update>
+	
+	<select id="Contents_ContentList" parameterType="qss.vo.UploadVo" resultType="qss.vo.UploadVo">
+	/*
+	ID : contents_sql.Contents_ContentList
+	DEC : 컨텐츠 리스트 조회
+	*/
+	<include refid="Common.BeforeSQL"/>
+		SELECT FILE_CONTENT_IDX, 
+				FILE_NAME,
+				SUBSTRING_INDEX(FILE_NAME, '.', -1) AS extens,
+				FILE_SIZE,
+				PLAY_TIME,
+		        date_format(REG_DATE, '%Y-%m-%d') AS regDt,
+		        CONT_TYPE,
+		        REG_DATE,
+		        THUMBNAIL_PATH
+		FROM FILE_CONTENT
+		WHERE IFNULL(DEL_YN,'N') = 'N'
+			AND GROUP_IDX = #{GROUP_IDX}
+			<if test="sSearch != null and sSearch != ''">
+				AND FILE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			 </if>
+		ORDER BY REG_DATE DESC
+	<include refid="Common.AfterSQL"/>
+	</select>
+
+
+	<select id="Contents_ContentListCnt" parameterType="qss.vo.UploadVo" resultType="int">
+		/*
+		  ID  : contents_sql.Contents_ContentListCnt
+		  DEC : 컨텐츠 리스트 Cnt 조회
+		*/
+			 SELECT COUNT(FILE_CONTENT_IDX)
+			 FROM FILE_CONTENT 
+			WHERE IFNULL(DEL_YN,'N') = 'N'
+				AND GROUP_IDX = #{GROUP_IDX}
+	</select>
+	
+	<insert id="Contents_Create" parameterType="hashmap">
+		/* 
+		  ID  : contents_sql.Contents_Create
+		  DEC : url/스트리밍 저장
+		*/
+		<selectKey resultType="string" keyProperty="fileContentIdx" order="BEFORE">
+	        SELECT  D.SEQ FROM(SELECT (SELECT ifnull(MAX(FILE_CONTENT_IDX) + 1, '1') FROM FILE_CONTENT) AS SEQ) AS D      
+	    </selectKey>    
+		INSERT INTO FILE_CONTENT
+		(
+		    FILE_CONTENT_IDX
+		  , FILE_NAME
+		  , SAVE_PATH
+		  , PLAY_TIME
+		  , REG_USER
+		  , REG_DATE
+		  , MOD_USER
+		  , MOD_DATE
+		  , CONT_TYPE
+		  , GROUP_IDX
+		)
+		VALUES 
+		(
+		    #{fileContentIdx}
+		  , #{fileName}
+		  , #{savePath}
+		  , #{playTime}
+		  , #{regUser}
+		  , now()
+		  , #{regUser}
+		  , now()
+		  , #{contType}
+		  , #{groupIdx}
+		)
+				
+	</insert>
+	
+	
+	<update id="Contents_Delete"  parameterType="qss.vo.UploadVo" >
+		/*
+		  ID  : contents_sql.Contents_Delete
+		  DEC : 컨텐츠 삭제
+		*/
+		UPDATE FILE_CONTENT
+		SET    DEL_YN = 'Y'
+		     , MOD_USER = #{modUser}
+		     , MOD_DATE = now()
+		 WHERE FILE_CONTENT_IDX IN
+		<foreach collection="checkboxArr" item="contentIdx"  open="(" close=")" separator=",">
+            #{contentIdx}
+        </foreach>
+
+	</update>
+	
+</mapper>

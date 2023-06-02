@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions PUBLIC
+      "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+      "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+	<definition name="emptyTemplate" template="/WEB-INF/views/layout_empty.jsp">
+		<put-attribute name="body" value="" />
+	</definition>
+	<definition name="indexTemplate" template="/WEB-INF/views/layout_index_new.jsp">
+		<put-attribute name="body" value="" />
+	</definition>
+	<definition name="defaultTemplateNew" template="/WEB-INF/views/layout_default_new.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/header_new.jsp" />
+		<put-attribute name="body" value="" />
+		<put-attribute name="footer" value="/WEB-INF/views/footer_new.jsp" />
+	</definition>
+	<definition name="nullTemplate" template="/WEB-INF/views/layout_null.jsp">
+		<put-attribute name="body" value="" />
+	</definition>
+	<definition name="formTemplate" template="/WEB-INF/views/layout_form.jsp">
+	</definition>
+
+	<definition name="/Common/*" extends="emptyTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/Common/{1}.jsp" />
+	</definition>
+
+	<definition name="/*/*NullTemp" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+
+	<!-- 팝업창 -->
+	<definition name="/*/Form" extends="formTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/Form.jsp" />
+	</definition>
+
+	<!-- 상세페이지 -->
+	<definition name="/*/Detail" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/Detail.jsp" />
+	</definition>
+
+	<!-- 업로드 -->
+	<definition name="/Upload/View" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/Upload/View.jsp" />
+	</definition>
+
+	<!-- 스케줄관리 팝업 -->
+	<definition name="/*/ScheduleForm" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/ScheduleForm.jsp"/>
+	</definition>
+	<!-- 스크린선택 팝업 -->
+	<definition name="/*/ScreenForm" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/ScreenForm.jsp"/>
+	</definition>
+
+	<!-- 정산 팝업 -->
+	<definition name="/*/BalanceAccountsForm" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/BalanceAccountsForm.jsp"/>
+	</definition>
+	<definition name="/*/RebalanceAccountsForm" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/RebalanceAccountsForm.jsp"/>
+	</definition>
+
+	<definition name="/*/Main" extends="defaultTemplateNew">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/Main.jsp" />
+	</definition>
+	<definition name="/*/*" extends="nullTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*" extends="indexTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/Index.jsp" />
+	</definition>
+
+	<definition name="mobileTemplate" template="/WEB-INF/views/Mobile/layout_mobile.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/Mobile/header_mobile.jsp" />
+		<put-attribute name="body" value="" />
+		<put-attribute name="footer" value="/WEB-INF/views/Mobile/footer_mobile.jsp" />
+	</definition>
+
+	<definition name="/Mobile/*/Main" extends="mobileTemplate">
+		<put-attribute name="body" value="/WEB-INF/jsp/Mobile/{1}/Main.jsp" />
+	</definition>
+
+</tiles-definitions>

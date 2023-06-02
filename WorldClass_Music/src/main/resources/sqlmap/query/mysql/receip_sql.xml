@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Resource">
+	<resultMap type="qss.vo.ReceiptVo" id="ReceiptResult" />
+	
+	<select id="Receipt_Tree" statementType="CALLABLE" parameterType="hashmap">
+<!-- 		{ CALL Receipt_Package.Receipt_Tree -->
+<!-- 			( -->
+<!-- 				#{DOMAIN_IN, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer}, -->
+<!-- 				#{BRAND_IN, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer}, -->
+<!-- 				#{FRANCHISEE_IN, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer}, -->
+<!-- 				#{result, mode=OUT, jdbcType=CURSOR, javaType=java.sql.ResultSet, resultMap=ReceiptResult} -->
+<!-- 			) -->
+<!-- 		} -->
+	</select>
+	<select id="Receipt_Get" statementType="CALLABLE" parameterType="hashmap">
+		{ CALL Receipt_Package.Receipt_Get
+			(
+				#{IDX_IN, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer},
+				#{result, mode=OUT, jdbcType=CURSOR, javaType=java.sql.ResultSet, resultMap=ReceiptResult}
+			)
+		}
+	</select>
+	
+	<insert id="Receipt_Create" statementType="CALLABLE" parameterType="hashmap">
+		{ 
+			CALL Receipt_Package.Receipt_Create
+			(
+				#{IDX_IN, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer}, 
+				#{IMGPATH_IN, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer}, 
+				#{ADDR1_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{ADDR2_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{ADDR3_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{CHARGER_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{CONTACT_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{CommentType1_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{COMMENT1_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{CommentType2_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{COMMENT2_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{CommentType3_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{COMMENT3_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{CommentType4_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{COMMENT4_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{CommentType5_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 
+				#{COMMENT5_IN, mode=IN, jdbcType=VARCHAR, javaType=string}, 				
+				#{result, mode=OUT, jdbcType=CURSOR, javaType=java.sql.ResultSet, resultMap=ReceiptResult}
+			) 
+		}
+	</insert>
+	
+	<select id="Receipt_Reset" statementType="CALLABLE" parameterType="hashmap">
+		{ CALL Receipt_Package.Receipt_Reset
+			(
+				#{IDX_IN, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer},
+				#{result, mode=OUT, jdbcType=CURSOR, javaType=java.sql.ResultSet, resultMap=ReceiptResult}
+			)
+		}
+	</select>
+	
+</mapper>

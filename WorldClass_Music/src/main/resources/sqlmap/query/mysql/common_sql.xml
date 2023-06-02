@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Common">
+	<resultMap type="qss.vo.CommonVo" id="CmsqResult" />
+
+	<insert id="Common_LogCreate" parameterType="qss.vo.CommonVo">
+		INSERT INTO USER_ACTION_LOG
+			(
+				REG_DATE				/*등록일*/
+				,ID 					/*아이디*/
+				,CTRL_NAME				/*사용메뉴명*/
+				,ACTION_NAME 			/*동작명*/
+				,IP						/*아이피*/
+				,DETAIL_INFO         	/*상세정보*/
+			  )
+			VALUES
+			(
+				NOW(),
+      			#{id},
+				#{ctrlName},
+				#{actionName},
+	            #{ip},
+	            #{detailInfo}
+			)
+	</insert>
+
+	<select id="Common_SearchTree" parameterType="hashmap" resultType="hashmap">
+		/*
+		  ID  : common_sql.Common_SearchTree
+		  DEC : 좌측 메뉴 조회
+		*/
+		<!-- 시스템 관라지 일경우 -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+		SELECT  '1' AS DEPTH
+			  , 'DOMAIN' AS DEPTH_NAME
+			  , DOMAIN_IDX AS IDX
+			  , DOMAIN_NAME AS NAME
+			  , '0' AS PARENT_IDX
+		FROM DOMAIN
+		UNION ALL
+		SELECT  '2'
+			  , 'BRAND'
+			  , CONCAT(DOMAIN_IDX, '_', BRAND_IDX)
+			  , NAME
+			  , DOMAIN_IDX
+		FROM    BRAND
+		WHERE   ifnull(DEL_YN, 'N') = 'N'
+		UNION ALL
+		SELECT  '3'+GROUP_DEPTH
+			 , 'GROUP'
+			 , CONCAT(DOMAIN_IDX, '_', BRAND_IDX, '_', GROUP_IDX)
+			 , GROUP_NAME
+			 , CONCAT(DOMAIN_IDX, '_', BRAND_IDX, if( PARENT_GROUP_IDX = '', '', CONCAT('_', PARENT_GROUP_IDX)))
+		FROM   SITEGROUP
+		WHERE  ifnull(DEL_YN, 'N') = 'N'
+		UNION ALL
+		SELECT  '4' + B.GROUP_DEPTH
+			 , 'FRANCHISEE'
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', A.GROUP_IDX, '_', A.FRANC_IDX)
+			 , FRANC_NAME
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', A.GROUP_IDX)
+		FROM   FRANCHISEE A
+			INNER JOIN SITEGROUP B ON A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND A.GROUP_IDX = B.GROUP_IDX
+		WHERE  FRANC_NAME LIKE CONCAT('%',#{serchKey},'%')
+		AND    ifnull(A.DEL_YN, 'N') = 'N'
+		UNION ALL
+		SELECT  '5'
+			 , 'KIOSK'
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', B.GROUP_IDX, '_', A.FRANC_IDX, '_', A.DEVICE_IDX) AS IDX
+			 , DEVICE_NAME
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', B.GROUP_IDX, '_', A.FRANC_IDX) AS PARENT_IDX
+		FROM   KIOSK A
+			INNER JOIN FRANCHISEE B ON A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND A.FRANC_IDX = B.FRANC_IDX
+		WHERE ifnull(A.DEL_YN, 'N') = 'N'
+		ORDER BY CASE WHEN DEPTH_NAME IN ('KIOSK') THEN depth END ASC, CASE WHEN DEPTH_NAME IN ('FRANCHISEE') THEN depth END ASC, CASE WHEN DEPTH_NAME IN ('GROUP') THEN depth END ASC, IDX
+		</if>
+
+
+		<!-- 시스템 관라지가 아닐경우(서비스, 매장 관리자) -->
+		<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType != 'ADM0001'">
+		SELECT  '1' AS DEPTH
+		      , 'DOMAIN' AS DEPTH_NAME
+		      , DOMAIN_IDX AS IDX
+		      , DOMAIN_NAME AS NAME
+		      , '0' AS PARENT_IDX
+		FROM DOMAIN
+		UNION ALL
+		SELECT  '2'
+		      , 'BRAND'
+		      , CONCAT(DOMAIN_IDX, '_', BRAND_IDX)
+		      , NAME
+		      , DOMAIN_IDX
+		FROM    BRAND
+		WHERE   ifnull(DEL_YN, 'N') = 'N' AND DOMAIN_IDX =  #{domainIdx}  AND BRAND_IDX =  #{brandIdx}
+		UNION ALL
+		SELECT  '3'+GROUP_DEPTH
+			 , 'GROUP'
+			 , CONCAT(DOMAIN_IDX, '_', BRAND_IDX, '_', GROUP_IDX)
+			 , GROUP_NAME
+			 , CONCAT(DOMAIN_IDX, '_', BRAND_IDX, if( PARENT_GROUP_IDX = '', '', CONCAT('_', PARENT_GROUP_IDX)))
+		FROM   SITEGROUP
+		WHERE  ifnull(DEL_YN, 'N') = 'N' AND DOMAIN_IDX =  #{domainIdx}  AND BRAND_IDX =  #{brandIdx}
+		UNION ALL
+		SELECT  '4' + B.GROUP_DEPTH
+			 , 'FRANCHISEE'
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', A.GROUP_IDX, '_', A.FRANC_IDX)
+			 , FRANC_NAME
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', A.GROUP_IDX)
+		FROM   FRANCHISEE A
+			INNER JOIN SITEGROUP B ON A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND A.GROUP_IDX = B.GROUP_IDX
+		WHERE  FRANC_NAME LIKE CONCAT('%',#{serchKey},'%')
+		AND    ifnull(A.DEL_YN, 'N') = 'N'  AND A.DOMAIN_IDX =  #{domainIdx}  AND A.BRAND_IDX =  #{brandIdx}
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+			/* 매장관리자는 자신것만 보이도록 설정*/
+			AND FRANC_IDX =  #{francIdx}
+			</if>
+		UNION ALL
+		SELECT  '5'
+			 , 'KIOSK'
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', B.GROUP_IDX, '_', A.FRANC_IDX, '_', A.DEVICE_IDX) AS IDX
+			 , DEVICE_NAME
+			 , CONCAT(A.DOMAIN_IDX, '_', A.BRAND_IDX, '_', B.GROUP_IDX, '_', A.FRANC_IDX) AS PARENT_IDX
+		FROM   KIOSK A
+			INNER JOIN FRANCHISEE B ON A.DOMAIN_IDX = B.DOMAIN_IDX AND A.BRAND_IDX = B.BRAND_IDX AND A.FRANC_IDX = B.FRANC_IDX
+		WHERE ifnull(A.DEL_YN, 'N') = 'N'
+		ORDER BY CASE WHEN DEPTH_NAME IN ('KIOSK') THEN depth END ASC, CASE WHEN DEPTH_NAME IN ('FRANCHISEE') THEN depth END ASC, CASE WHEN DEPTH_NAME IN ('GROUP') THEN depth END ASC, IDX
+		</if>
+
+	</select>
+
+	<update id="Common_UpdateScheduleVersion" parameterType="java.util.Map">
+		<selectKey keyProperty="scheduleVersionIdx" resultType="biginteger" order="BEFORE">
+			SELECT
+				IFNULL(MAX(SCHEDULE_VERSION_IDX) + 1, 1)
+			FROM SCHEDULE_VERSION
+			WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+		</selectKey>
+			INSERT INTO SCHEDULE_VERSION
+			(
+				DOMAIN_IDX				/*도메인일련번호*/
+				,BRAND_IDX				/*브랜드일련번호*/
+				,FRANC_IDX 				/*가맹점일련번호*/
+				,DEVICE_IDX				/*단말일련번호*/
+				,SCHEDULE_VERSION_IDX   /*스케줄버전일련번호*/
+				,SCHEDULE_TYPE 			/*스케줄타입*/
+				,MOD_REASON				/*수정사유*/
+				,REG_USER         		/*등롷자*/
+				,REG_DATE         		/*등록일*/
+				,MOD_USER         		/*수정자*/
+				,MOD_DATE         		/*수정일*/
+			  )
+			VALUES
+			(
+				#{domainIdx},
+     			#{brandIdx},
+      			#{francIdx},
+      			#{deviceIdx},
+				#{scheduleVersionIdx},
+				#{scheduleType},
+	            #{modReason},
+	            #{modUser},
+	            NOW(),
+	            #{modUser},
+	            NOW()
+			) ON DUPLICATE KEY
+			UPDATE
+				MOD_REASON	= #{modReason},
+				MOD_DATE	= NOW(),
+				MOD_USER    = #{modUser}
+	</update>
+
+
+	<sql id="BeforeSQL">
+		SELECT   A.*
+		FROM
+		(
+	</sql>
+
+	<sql id="AfterSQL">
+		) AS A
+		<if test="sSortName != null and sSortName != ''">
+				ORDER BY ${sSortName}  ${sSortDir_0}
+		</if>
+		<if test="sSortName == null or sSortName == ''">
+			<if test="defaultOrderName != null and defaultOrderName != ''">
+				ORDER BY ${defaultOrderName}  ${defaultOrderType}
+			</if>
+		</if>
+		<if test="iDisplayStart != null and iDisplayLength != ''">
+           LIMIT #{iDisplayStart} , #{iDisplayLength}
+        </if>
+	</sql>
+
+</mapper>

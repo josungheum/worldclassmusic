@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Calendar">
+	<resultMap type="qss.vo.CalendarVo" id="CalendarVo" />
+	<resultMap type="qss.vo.KioskVo" id="KioskVo" />
+
+
+	<select id="Calendar_CalendarList" parameterType="qss.vo.CalendarVo" resultType="qss.vo.CalendarVo">
+	/*
+	ID : calendar_sql.Calendar_CalendarList
+	DEC : 스케줄 리스트 조회
+	*/
+		SELECT
+			   ko.DOMAIN_IDX
+			  ,ko.BRAND_IDX
+			  ,ko.FRANC_IDX
+			  ,ko.DEVICE_IDX
+			  ,ko.DEVICE_TYPE
+			  ,ko.DEVICE_NAME
+			  ,t.MAIN_SCHEDULE_IDX
+			  ,t.MAIN_SCHEDULE_NAME
+			  ,t.START_DATE
+			  ,t.END_DATE
+			  ,t.ACTIVE_YN
+			  ,t.DEL_YN
+			  ,t.START_TIME
+			  ,t.END_TIME
+			  ,t.DAY_OF_WEEK
+			  ,t.EVENT_TYPE
+			  ,t.COUNT_TYPE
+			  ,t.SCHEDULE_TYPE
+			  ,t.CHECK_DATE_IDX
+			FROM   kiosk ko
+			LEFT OUTER JOIN
+			(
+
+			  SELECT
+			    ms.DOMAIN_IDX
+			   ,ms.BRAND_IDX
+			   ,ms.FRANC_IDX
+			   ,ms.MAIN_SCHEDULE_IDX
+			   ,ms.MAIN_SCHEDULE_NAME
+			   ,ms.START_DATE
+			   ,ms.END_DATE
+			   ,ms.ACTIVE_YN
+			   ,ms.DEL_YN
+			   ,ms.START_TIME
+			   ,ms.END_TIME
+			   ,ms.DAY_OF_WEEK
+			   ,ms.EVENT_TYPE
+			   ,ms.COUNT_TYPE
+			   ,ms.SCHEDULE_TYPE
+			   ,st.DEVICE_IDX
+			   ,CASE DAYOFWEEK(DATE(REPLACE(#{searchDate}, '-', '')))
+			    WHEN '1' THEN 0
+			    WHEN '2' THEN 1
+			    WHEN '3' THEN 2
+			    WHEN '4' THEN 3
+			    WHEN '5' THEN 4
+			    WHEN '6' THEN 5
+			    WHEN '7' THEN 6
+			    ELSE 7
+			  END AS CHECK_DATE_IDX
+<!-- 			   ,st.DISTRIBUTE_YN -->
+			  FROM MAIN_SCHEDULE ms, SCHEDULE_TARGET st
+			  WHERE
+			  	ifnull(ms.DEL_YN, 'N') = 'N' AND ms.DOMAIN_IDX = #{domainIdx} AND ifnull(ms.ACTIVE_YN, 'Y') = 'Y'
+			  	AND ms.SCHEDULE_TYPE IN ('R', 'T')
+			  	<![CDATA[
+				AND DATE(ms.START_DATE)  <= DATE(#{searchDate}) AND DATE(REPLACE(#{searchDate}, '-', '')) <= DATE(ms.END_DATE)
+				]]>
+			  	<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+					<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+						AND ms.BRAND_IDX = #{brandIdx}
+					</if>
+					<if test="francIdx != null and francIdx != null and francIdx != 0">
+						AND ms.FRANC_IDX = #{francIdx}
+					</if>
+				</if>
+
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+				 	/* 브랜드 관리자는 해당 브랜드에 포함된 모든 매장 포함되게 또는 선택한 매장만 */
+					AND ms.BRAND_IDX = #{sessionBrandIdx}
+					<if test="francIdx != null and francIdx != '' and francIdx != 0">
+					AND ms.FRANC_IDX = #{francIdx}
+					</if>
+				</if>
+
+				<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+				 	/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+				 	AND ms.BRAND_IDX = #{sessionBrandIdx}
+					AND ms.FRANC_IDX = #{sessionFrancIdx}
+				</if>
+			    AND ms.DOMAIN_IDX = st.DOMAIN_IDX
+			    AND ms.BRAND_IDX = st.BRAND_IDX
+			    AND ms.FRANC_IDX = st.FRANC_IDX
+			    AND ms.MAIN_SCHEDULE_IDX = st.MAIN_SCHEDULE_IDX
+
+			) t ON ko.DOMAIN_IDX = t.DOMAIN_IDX
+				AND ko.BRAND_IDX = t.BRAND_IDX
+				AND ko.FRANC_IDX = t.FRANC_IDX
+				AND ko.DEVICE_IDX = t.DEVICE_IDX
+			WHERE  ifnull(ko.DEL_YN, 'N') = 'N' AND ko.DOMAIN_IDX = #{domainIdx}
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+				<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+					AND ko.BRAND_IDX = #{brandIdx}
+				</if>
+				<if test="francIdx != null and francIdx != null and francIdx != 0">
+					AND ko.FRANC_IDX = #{francIdx}
+				</if>
+			</if>
+			AND
+	        (CASE
+	          	WHEN t.SCHEDULE_TYPE = 'R' THEN 1
+				WHEN t.SCHEDULE_TYPE = 'T' AND ifnull(t.DAY_OF_WEEK, 'N') != 'N' AND substring(t.DAY_OF_WEEK, t.CHECK_DATE_IDX+1, 1) = 1 THEN 1
+	            ELSE 0
+			END) = 1
+
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+			 	/* 브랜드 관리자는 해당 브랜드에 포함된 모든 매장 포함되게 또는 선택한 매장만 */
+				AND ko.BRAND_IDX = #{sessionBrandIdx}
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND ko.FRANC_IDX = #{francIdx}
+				</if>
+			</if>
+
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+			 	/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+			 	AND ko.BRAND_IDX = #{sessionBrandIdx}
+				AND ko.FRANC_IDX = #{sessionFrancIdx}
+			</if>
+	</select>
+
+
+	<select id="Calendar_DeviceList" parameterType="qss.vo.CalendarVo" resultType="qss.vo.KioskVo">
+	/*
+	ID : calendar_sql.Calendar_DeviceList
+	DEC : 단말 리스트 조회
+	*/
+		SELECT
+			   DOMAIN_IDX
+			   ,BRAND_IDX
+			   ,FRANC_IDX
+			   ,DEVICE_IDX
+			   ,DEVICE_CODE
+			   ,DEVICE_NAME
+			   ,DEVICE_TYPE
+			   ,COL_COUNT_TYPE
+			   ,ACTIVE_YN
+			   ,DEL_YN
+			FROM   kiosk ko
+			WHERE  ifnull(ko.DEL_YN, 'N') = 'N' AND ko.DOMAIN_IDX = #{domainIdx}
+			<if test="sessionAdminType != null and sessionAdminType != '' and sessionAdminType == 'ADM0001'">
+				<if test="brandIdx != null and brandIdx != null and brandIdx != 0">
+					AND ko.BRAND_IDX = #{brandIdx}
+				</if>
+				<if test="francIdx != null and francIdx != null and francIdx != 0">
+					AND ko.FRANC_IDX = #{francIdx}
+				</if>
+			</if>
+
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0002'">
+			 	/* 브랜드 관리자는 해당 브랜드에 포함된 모든 매장 포함되게 또는 선택한 매장만 */
+				AND ko.BRAND_IDX = #{sessionBrandIdx}
+				<if test="francIdx != null and francIdx != '' and francIdx != 0">
+				AND ko.FRANC_IDX = #{francIdx}
+				</if>
+			</if>
+
+			<if test="sessionBrandIdx != null and sessionAdminType != '' and sessionAdminType == 'ADM0003'">
+			 	/* 매장 관리자는 자신이 속한 브랜드의 자기 매장만 보이게 */
+			 	AND ko.BRAND_IDX = #{sessionBrandIdx}
+				AND ko.FRANC_IDX = #{sessionFrancIdx}
+			</if>
+	</select>
+</mapper>

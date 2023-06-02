@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FloorManagement">
+
+	<!-- 층리스트 조회 : floor_sql.Floor_ListFloor -->
+	<select id="Floor_ListFloor" parameterType="qss.vo.FloorVo" resultType="qss.vo.FloorVo">
+		<include refid="Common.BeforeSQL" />
+		SELECT FLOOR_IDX, DISP_SHORT_NM, DISP_NM_KR, DISP_NM_EN, DISP_NM_CH, DISP_NM_JP,
+			CONCAT(DISP_NM_KR , '&lt;br&gt;', DISP_NM_EN, '&lt;br&gt;', DISP_NM_CH, '&lt;br&gt;', DISP_NM_JP) AS FLOOR_FULL_NAME,
+			ORDER_SEQ, DATE_FORMAT(MOD_DATE,'%Y-%m-%d') AS MOD_DATE, ACTIVE_YN,
+			(SELECT COUNT(*)
+				FROM FLOOR_SHOP FS
+				WHERE FS.DOMAIN_IDX = A.DOMAIN_IDX AND FS.BRAND_IDX = A.BRAND_IDX AND FS.FLOOR_IDX = A.FLOOR_IDX
+			) AS SHOP_COUNT,
+			(SELECT COUNT(*)
+				FROM FLOOR_KIOSK FK
+				WHERE FK.DOMAIN_IDX = A.DOMAIN_IDX AND FK.BRAND_IDX = A.BRAND_IDX AND FK.FLOOR_IDX = A.FLOOR_IDX
+			) AS KIOSK_COUNT,
+			(SELECT COUNT(*)
+				FROM FLOOR_FACILITIES FF
+				WHERE FF.DOMAIN_IDX = A.DOMAIN_IDX AND FF.BRAND_IDX = A.BRAND_IDX AND FF.FLOOR_IDX = A.FLOOR_IDX
+			) AS FACILITIES_COUNT
+		FROM FLOOR A
+		WHERE IFNULL(DEL_YN, 'N') = 'N' AND DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} 
+		<if test="sSearch != null and sSearch != ''">
+			AND (DISP_SHORT_NM LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_KR LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_EN LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_CH LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_JP LIKE CONCAT('%',#{sSearch},'%'))
+		</if>
+		<include refid="Common.AfterSQL" />
+	</select>
+
+	<!-- 층리스트 카운트 : floor_sql.Floor_ListCount -->
+	<select id="Floor_ListCount" parameterType="qss.vo.FloorVo" resultType="int">
+		SELECT COUNT(*)
+		FROM FLOOR
+		WHERE IFNULL(DEL_YN, 'N') = 'N' AND DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx}
+		<if test="sSearch != null and sSearch != ''">
+			AND (DISP_SHORT_NM LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_KR LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_EN LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_CH LIKE CONCAT('%',#{sSearch},'%') OR
+			DISP_NM_JP LIKE CONCAT('%',#{sSearch},'%'))
+		</if>
+	</select>
+
+	<!-- 층정보 활성/비활성화 : floor_sql.Floor_ActiveFloor -->
+	<update id="Floor_ActiveFloor" parameterType="qss.vo.FloorVo">
+		UPDATE FLOOR
+		SET MOD_USER = #{regUser}, MOD_DATE = now(), ACTIVE_YN = #{activeYn}
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FLOOR_IDX = #{floorIdx}
+	</update>
+
+	<!-- 층정보 삭제 : floor_sql.Floor_DeleteFloor -->
+	<update id="Floor_DeleteFloor" parameterType="qss.vo.FloorVo">
+		UPDATE FLOOR
+		SET DEL_YN = 'Y', MOD_USER = #{regUser}, MOD_DATE = now()
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND 
+		FLOOR_IDX IN
+		<foreach collection="checkboxArr" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>
+	</update>
+
+	<!-- 층 별 정보 : floor_sql.Floor_Form -->
+	<select id="Floor_Form" parameterType="qss.vo.FloorVo" resultType="qss.vo.FloorVo">
+		SELECT F.DOMAIN_IDX, F.BRAND_IDX, F.FLOOR_IDX, F.DISP_SHORT_NM, F.DISP_NM_KR, F.DISP_NM_EN, F.DISP_NM_CH, F.DISP_NM_JP, F.ORDER_SEQ, 
+			F.LOGO_IMG, F.MAP_IMG, DATE_FORMAT(F.MOD_DATE,'%Y-%m-%d') AS MOD_DATE, F.ACTIVE_YN,F.FLOOR_TYPE, SC.CODE_VALUE, SC.CODE_NAME,
+		(
+			SELECT FC.THUMBNAIL_PATH
+			FROM FILE_CONTENT FC
+			WHERE FC.FILE_CONTENT_IDX = F.MAP_IMG
+		) AS MAP_THUMBNAIL_PATH,
+		(
+     		SELECT FC.SAVE_PATH
+     		FROM FILE_CONTENT FC
+     		WHERE FC.FILE_CONTENT_IDX = F.MAP_IMG
+     	) AS MAP_IMG_PATH,
+     	(
+			SELECT FC.THUMBNAIL_PATH
+			FROM FILE_CONTENT FC
+			WHERE FC.FILE_CONTENT_IDX = F.LOGO_IMG
+		) AS LOGO_THUMBNAIL_PATH,
+		(
+     		SELECT FC.SAVE_PATH
+     		FROM FILE_CONTENT FC
+     		WHERE FC.FILE_CONTENT_IDX = F.LOGO_IMG
+     	) AS LOGO_IMG_PATH
+		FROM FLOOR F
+		LEFT OUTER JOIN SYSTEM_CODE SC ON (F.FLOOR_TYPE = SC.CODE_VALUE)
+		WHERE IFNULL(F.DEL_YN, 'N') = 'N' AND F.DOMAIN_IDX = #{domainIdx} AND F.BRAND_IDX = #{brandIdx} AND F.FLOOR_IDX = #{floorIdx}
+	</select>
+
+	<!-- 층 정보 중복체크 : floor_sql.Floor_FloorOverlap -->
+	<select id="Floor_FloorOverlap" parameterType="qss.vo.FloorVo" resultType="int">
+		SELECT COUNT(*)
+		FROM FLOOR
+		WHERE IFNULL(DEL_YN, 'N') = 'N' AND DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND DISP_SHORT_NM = #{dispShortNm}
+		<if test="floorIdx != null and floorIdx != '' and floorIdx != 0">
+			AND FLOOR_IDX != #{floorIdx}
+		</if>
+	</select>
+
+	<!-- 층 정보 저장 : floor_sql.Floor_FloorCreate -->	
+	<insert id="Floor_FloorCreate" parameterType="qss.vo.FloorVo">
+		<selectKey keyProperty="floorIdx" resultType="biginteger" order="BEFORE">
+			SELECT IFNULL(MAX(FLOOR_IDX) + 1, '50000000001')
+			FROM FLOOR
+		</selectKey>
+		INSERT INTO FLOOR
+		(DOMAIN_IDX, BRAND_IDX, FLOOR_IDX, FLOOR_TYPE, DISP_SHORT_NM, DISP_NM_KR, DISP_NM_EN, DISP_NM_CH, DISP_NM_JP, 
+		ORDER_SEQ, LOGO_IMG, MAP_IMG, ACTIVE_YN, DEL_YN, REG_USER, REG_DATE, MOD_USER, MOD_DATE)
+		VALUES
+		(#{domainIdx}, #{brandIdx}, #{floorIdx}, #{floorType}, #{dispShortNm}, #{dispNmKr}, #{dispNmEn}, #{dispNmCh}, #{dispNmJp},
+		#{orderSeq}, #{logoImg}, #{mapImg}, 'Y' , 'N', #{regUser}, now(), #{regUser}, now())
+	</insert>
+	
+	<!-- 층 매장타입 코드 : floor_sql.Floor_FloorOverlap -->
+	<select id="Floor_BrandTypeCodeList" parameterType="qss.vo.FloorVo" resultType="qss.vo.SystemCodeVo">
+		SELECT CONCAT(CODE_NAME,' [',CODE_VALUE,']') AS 'CODE_NAME' , CODE_VALUE 
+		FROM SYSTEM_CODE
+		WHERE IFNULL(DEL_YN, 'N') = 'N' AND IFNULL(ACTIVE_YN, 'Y') = 'Y' AND CODE_GROUP = 'DVS0000'
+		ORDER BY ORDER_SEQ ASC
+	</select>
+
+	<!-- 층 정보 수정 : floor_sql.Floor_FloorUpdate -->
+	<update id="Floor_FloorUpdate" parameterType="qss.vo.FloorVo">
+		UPDATE FLOOR 
+		SET FLOOR_TYPE = #{floorType}, DISP_SHORT_NM = #{dispShortNm}, DISP_NM_KR = #{dispNmKr}, DISP_NM_EN = #{dispNmEn}, DISP_NM_CH = #{dispNmCh}, DISP_NM_JP = #{dispNmJp},         
+			ORDER_SEQ = #{orderSeq}, MAP_IMG = #{mapImg}, LOGO_IMG = #{logoImg}, MOD_USER = #{regUser}, MOD_DATE = now()
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FLOOR_IDX = #{floorIdx}
+	</update>
+	
+	<!-- 층별 매장 리스트 : floor_sql.Floor_FloorShopList -->
+	<select id="Floor_FloorShopList" parameterType="qss.vo.FloorVo" resultType="qss.vo.FloorShopVo">
+		SELECT FS.DOMAIN_IDX, FS.BRAND_IDX, FS.FLOOR_IDX, FS.SHOP_IDX, S.DISP_NM_KR, S.DISP_NM_EN, S.DISP_NM_CH, S.DISP_NM_JP, FS.POS_X, FS.POS_Y
+		FROM FLOOR_SHOP FS
+			INNER JOIN SHOP S ON (FS.DOMAIN_IDX = S.DOMAIN_IDX AND FS.BRAND_IDX = S.BRAND_IDX AND FS.SHOP_IDX = S.SHOP_IDX)
+		WHERE S.DEL_YN = 'N' AND FS.DOMAIN_IDX = #{domainIdx} AND FS.BRAND_IDX = #{brandIdx} AND FS.FLOOR_IDX = #{floorIdx}
+	</select>
+	
+	<!-- 전체 브랜드(매장) 리스트 : floor_sql.Floor_TotalShopList -->
+	<select id="Floor_TotalShopList" parameterType="qss.vo.FloorVo" resultType="qss.vo.ShopVo">
+		<include refid="Common.BeforeSQL" />
+		SELECT S.DOMAIN_IDX , S.BRAND_IDX , S.SHOP_IDX, S.DISP_NM_KR, S.DISP_NM_EN, S.DISP_NM_CH, S.DISP_NM_JP, FS.FLOOR_IDX, 
+			IFNULL(F.DISP_SHORT_NM , '-') AS FLOOR_NM, FS.POS_X, FS.POS_Y
+		FROM SHOP S
+			LEFT OUTER JOIN FLOOR_SHOP FS ON (S.DOMAIN_IDX = FS.DOMAIN_IDX AND S.BRAND_IDX = FS.BRAND_IDX AND S.SHOP_IDX = FS.SHOP_IDX)
+			LEFT OUTER JOIN FLOOR F ON (S.DOMAIN_IDX = F.DOMAIN_IDX AND S.BRAND_IDX = F.BRAND_IDX AND FS.FLOOR_IDX = F.FLOOR_IDX)
+		WHERE S.DEL_YN = 'N' AND S.DOMAIN_IDX = #{domainIdx} AND S.BRAND_IDX = #{brandIdx} 
+		<if test="floorIdx != null and floorIdx != '' and floorIdx != 0">
+			AND FS.FLOOR_IDX = #{floorIdx}
+		</if>
+		<if test="sSearch != null and sSearch != ''">
+			AND (S.DISP_NM_KR LIKE CONCAT('%',#{sSearch},'%'))
+		</if>
+		ORDER BY F.DISP_SHORT_NM ASC, S.DISP_NM_KR ASC, S.DISP_NM_EN ASC
+		<include refid="Common.AfterSQL" />
+	</select>
+	
+	<!-- 전체 브랜드(매장) 리스트 카운트 : floor_sql.Floor_TotalShopListCount -->
+	<select id="Floor_TotalShopListCount" parameterType="qss.vo.FloorVo" resultType="int">
+		SELECT COUNT(*)
+		FROM SHOP S
+			LEFT OUTER JOIN FLOOR_SHOP FS ON (S.DOMAIN_IDX = FS.DOMAIN_IDX AND S.BRAND_IDX = FS.BRAND_IDX AND S.SHOP_IDX = FS.SHOP_IDX)
+			LEFT OUTER JOIN FLOOR F ON (S.DOMAIN_IDX = F.DOMAIN_IDX AND S.BRAND_IDX = F.BRAND_IDX AND FS.FLOOR_IDX = F.FLOOR_IDX) 
+		WHERE S.DEL_YN = 'N' AND S.DOMAIN_IDX = #{domainIdx} AND S.BRAND_IDX = #{brandIdx}
+		<if test="sSearch != null and sSearch != ''">
+			AND (S.DISP_NM_KR LIKE CONCAT('%',#{sSearch},'%'))
+		</if>
+	</select>
+	
+	<!-- 층 브랜드(매장)정보 중복체크 : floor_sql.Floor_FloorShopOverlap -->
+	<select id="Floor_FloorShopOverlap" parameterType="qss.vo.FloorShopVo" resultType="int">
+		SELECT COUNT(*)
+		FROM FLOOR_SHOP
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FLOOR_IDX = #{floorIdx} AND SHOP_IDX = #{shopIdx}
+	</select>
+	
+	<!-- 층 브랜드(매장)정보 저장 : floor_sql.Floor_FloorShopCreate -->	
+	<insert id="Floor_FloorShopCreate" parameterType="qss.vo.FloorShopVo">
+		INSERT INTO FLOOR_SHOP
+		(DOMAIN_IDX, BRAND_IDX, FLOOR_IDX, SHOP_IDX, POS_X, POS_Y)
+		VALUES
+		(#{domainIdx}, #{brandIdx}, #{floorIdx}, #{shopIdx}, 0, 0)
+	</insert>
+	
+	<!-- 층 브랜드(매장)정보 수정 : floor_sql.Floor_FloorShopListUpdate -->	
+	<update id="Floor_FloorShopListUpdate" parameterType="java.util.List">
+		<foreach collection="list" item="item" index="index" separator=";">
+			UPDATE FLOOR_SHOP
+			set POS_X = #{item.posX}, POS_Y = #{item.posY}
+			WHERE DOMAIN_IDX = #{item.domainIdx} AND BRAND_IDX = #{item.brandIdx} AND FLOOR_IDX = #{item.floorIdx} AND SHOP_IDX = #{item.shopIdx}
+		</foreach>
+	</update>
+
+	<!-- 층 브랜드(매장)정보 삭제 : floor_sql.Floor_FloorShopDelete -->
+	<delete id="Floor_FloorShopDelete" parameterType="qss.vo.FloorShopVo">
+		DELETE FROM FLOOR_SHOP
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FLOOR_IDX = #{floorIdx} AND SHOP_IDX = #{shopIdx} 
+	</delete>
+	
+	<!-- 층별 편의시설 리스트 : floor_sql.Floor_FloorFacilitiesList -->
+	<select id="Floor_FloorFacilitiesList" parameterType="qss.vo.FloorVo" resultType="qss.vo.FloorFacilitiesVo">
+		SELECT FF.DOMAIN_IDX, FF.BRAND_IDX, FF.FLOOR_IDX, FF.FACILITY_TYPE, SC.CODE_VALUE, SC.CODE_NAME, SC.CODE_LEVEL, FF.POS_X, FF.POS_Y, FF.ORDER_SEQ
+		FROM FLOOR_FACILITIES FF
+			INNER JOIN SYSTEM_CODE SC ON (SC.CODE_GROUP = 'CNV0000' AND SC.CODE_VALUE = FF.FACILITY_TYPE)
+		WHERE FF.DOMAIN_IDX = #{domainIdx} AND FF.BRAND_IDX = #{brandIdx} AND FF.FLOOR_IDX = #{floorIdx}
+	</select>
+	
+	<!-- 전체 편의시설 리스트 : floor_sql.Floor_TotalFacilitiesList -->
+	<select id="Floor_TotalFacilitiesList" parameterType="qss.vo.FloorVo" resultType="qss.vo.SystemCodeVo">
+		SELECT CODE_IDX, CODE_GROUP, CODE_VALUE, CODE_NAME, CODE_LEVEL, ORDER_SEQ, ACTIVE_YN, DEL_YN, MEMO
+		FROM SYSTEM_CODE
+		WHERE DEL_YN ='N' AND CODE_GROUP = 'CNV0000' AND CODE_LEVEL != 0
+		ORDER BY ORDER_SEQ ASC
+	</select>
+	
+	<!-- 층 편의시설 정보 저장 : floor_sql.Floor_FloorFacilitiesCreate -->	
+	<insert id="Floor_FloorFacilitiesCreate" parameterType="qss.vo.FloorFacilitiesVo">
+		<selectKey keyProperty="orderSeq" resultType="int" order="BEFORE">
+			SELECT IFNULL(MAX(ORDER_SEQ) + 1, '0')
+			FROM FLOOR_FACILITIES
+		</selectKey>
+		INSERT INTO FLOOR_FACILITIES
+		(DOMAIN_IDX, BRAND_IDX, FLOOR_IDX, FACILITY_TYPE, POS_X, POS_Y, ORDER_SEQ)
+		VALUES
+		(#{domainIdx}, #{brandIdx}, #{floorIdx}, #{facilityType}, 0, 0, #{orderSeq})
+	</insert>
+	
+	<!-- 층 편의시설 정보 수정 : floor_sql.Floor_FloorFacilitiesListUpdate -->	
+	<update id="Floor_FloorFacilitiesListUpdate" parameterType="java.util.List">
+		<foreach collection="list" item="item" index="index" separator=";">
+			UPDATE FLOOR_FACILITIES
+			set POS_X = #{item.posX}, POS_Y = #{item.posY}
+			WHERE DOMAIN_IDX = #{item.domainIdx} AND BRAND_IDX = #{item.brandIdx} AND FLOOR_IDX = #{item.floorIdx} AND FACILITY_TYPE = #{item.facilityType} AND ORDER_SEQ = #{item.orderSeq} 
+		</foreach>
+	</update>
+	
+	<!-- 층 편의시설 정보 삭제 : floor_sql.Floor_FloorFacilitiesDelete -->
+	<delete id="Floor_FloorFacilitiesDelete" parameterType="qss.vo.FloorFacilitiesVo">
+		DELETE FROM FLOOR_FACILITIES
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FLOOR_IDX = #{floorIdx} AND FACILITY_TYPE = #{facilityType} AND ORDER_SEQ = #{orderSeq} 
+	</delete>
+	
+	<!-- 층  경로 정보 : floor_sql.Floor_FloorMappath -->
+	<select id="Floor_FloorMappath" parameterType="qss.vo.FloorVo" resultType="qss.vo.FloorMappathVo">
+		SELECT FM.DOMAIN_IDX, FM.BRAND_IDX, FM.FLOOR_IDX, FM.ROW_CNT, FM.COL_CNT, FM.PATH_LIST, F.DISP_SHORT_NM
+		FROM FLOOR_MAPPATH FM
+			INNER JOIN FLOOR F ON (FM.DOMAIN_IDX = F.DOMAIN_IDX AND FM.BRAND_IDX = F.BRAND_IDX AND FM.FLOOR_IDX = F.FLOOR_IDX)
+		WHERE IFNULL(F.DEL_YN, 'N') = 'N' AND FM.DOMAIN_IDX = #{domainIdx} AND FM.BRAND_IDX = #{brandIdx} AND FM.FLOOR_IDX = #{floorIdx}
+	</select>
+	
+	<!-- 층  경로 정보 중복 확인 : floor_sql.Floor_FloorMappathOverlap -->
+	<select id="Floor_FloorMappathOverlap" parameterType="qss.vo.FloorVo" resultType="int">
+		SELECT COUNT(*)
+		FROM FLOOR_MAPPATH FM
+			INNER JOIN FLOOR F ON (FM.DOMAIN_IDX = F.DOMAIN_IDX AND FM.BRAND_IDX = F.BRAND_IDX AND FM.FLOOR_IDX = F.FLOOR_IDX)
+		WHERE IFNULL(F.DEL_YN, 'N') = 'N' AND FM.DOMAIN_IDX = #{domainIdx} AND FM.BRAND_IDX = #{brandIdx} AND FM.FLOOR_IDX = #{floorIdx}
+	</select>
+	
+	<!-- 층 경로정보 저장 : floor_sql.Floor_FloorMappathCreate -->	
+	<insert id="Floor_FloorMappathCreate" parameterType="qss.vo.FloorMappathVo">
+		INSERT INTO FLOOR_MAPPATH
+		(DOMAIN_IDX, BRAND_IDX, FLOOR_IDX, ROW_CNT, COL_CNT, PATH_LIST)
+		VALUES
+		(#{domainIdx}, #{brandIdx}, #{floorIdx}, #{rowCnt}, #{colCnt}, #{pathList})
+	</insert>
+	
+	<!-- 층 경로 정보 수정 : floor_sql.Floor_FloorMappathUpdate -->
+	<update id="Floor_FloorMappathUpdate" parameterType="qss.vo.FloorMappathVo">
+		UPDATE FLOOR_MAPPATH 
+		set ROW_CNT = #{rowCnt}, COL_CNT = #{colCnt}, PATH_LIST = #{pathList}
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FLOOR_IDX = #{floorIdx}
+	</update>
+	
+	<!-- 전체 단말 리스트 : floor_sql.Floor_KioskTotalList -->
+	<select id="Floor_KioskTotalList" parameterType="qss.vo.FloorVo" resultType="qss.vo.FloorKioskVo">
+		<include refid="Common.BeforeSQL" />
+		SELECT F.DOMAIN_IDX , F.BRAND_IDX , F.FRANC_IDX , F.FRANC_CODE, F.FRANC_NAME , K.DEVICE_IDX, K.DEVICE_CODE , K.DEVICE_NAME, K.DEVICE_TYPE , 
+			FK.FLOOR_IDX , FK.POS_X , FK.POS_Y , IFNULL(FL.DISP_SHORT_NM , '-') AS DISP_SHORT_NM, IFNULL(FK.DIRECTION, 'b') AS DIRECTION 
+		FROM FRANCHISEE F
+			INNER JOIN KIOSK K ON (F.DOMAIN_IDX = K.DOMAIN_IDX AND F.BRAND_IDX = K.BRAND_IDX AND F.FRANC_IDX = K.FRANC_IDX)
+			LEFT OUTER JOIN FLOOR_KIOSK FK ON (K.DOMAIN_IDX = FK.DOMAIN_IDX AND K.BRAND_IDX = FK.BRAND_IDX AND K.FRANC_IDX = FK.FRANC_IDX AND K.DEVICE_IDX = FK.DEVICE_IDX)
+			LEFT OUTER JOIN FLOOR FL ON (FK.DOMAIN_IDX = FL.DOMAIN_IDX AND FK.BRAND_IDX = FL.BRAND_IDX AND FK.FLOOR_IDX = FL.FLOOR_IDX)
+		WHERE K.DEL_YN = 'N' AND K.DOMAIN_IDX = #{domainIdx} AND K.BRAND_IDX = #{brandIdx}
+		<if test="floorIdx != null and floorIdx != '' and floorIdx != 0">
+			AND FK.FLOOR_IDX = #{floorIdx}
+		</if>
+		ORDER BY FL.DISP_SHORT_NM ASC, FL.DISP_NM_KR ASC, K.DEVICE_IDX ASC
+		<include refid="Common.AfterSQL" />
+	</select>
+	
+	<!-- 층 단말정보 저장 : floor_sql.Floor_FloorKioskListCreate -->
+	<insert id="Floor_FloorKioskListCreate" parameterType="java.util.List">
+		<foreach collection="list" item="item" index="index" separator=";">
+			INSERT INTO FLOOR_KIOSK
+			(DOMAIN_IDX, BRAND_IDX, FLOOR_IDX, FRANC_IDX, DEVICE_IDX, POS_X, POS_Y, DIRECTION)
+			VALUES
+			(#{item.domainIdx}, #{item.brandIdx}, #{item.floorIdx}, #{item.francIdx}, #{item.deviceIdx}, 0, 0, 'b')
+		</foreach>
+	</insert>
+
+	<!-- 층 단말정보 수정 : floor_sql.Floor_FloorKioskListUpdate -->
+	<update id="Floor_FloorKioskListUpdate" parameterType="java.util.List">
+		<foreach collection="list" item="item" index="index" separator=";">
+			UPDATE FLOOR_KIOSK
+			set POS_X = #{item.posX}, POS_Y = #{item.posY}, DIRECTION = #{item.direction}
+			WHERE DOMAIN_IDX = #{item.domainIdx} AND BRAND_IDX = #{item.brandIdx} AND FLOOR_IDX = #{item.floorIdx} AND FRANC_IDX = #{item.francIdx} AND DEVICE_IDX = #{item.deviceIdx}
+		</foreach>
+	</update>
+	
+	<!-- 층 단말정보 삭제 : floor_sql.Floor_FloorKioskDelete -->
+	<delete id="Floor_FloorKioskDelete" parameterType="qss.vo.FloorKioskVo">
+		DELETE FROM FLOOR_KIOSK
+		WHERE DOMAIN_IDX = #{domainIdx} AND BRAND_IDX = #{brandIdx} AND FLOOR_IDX = #{floorIdx} AND FRANC_IDX = #{francIdx} AND DEVICE_IDX = #{deviceIdx} 
+	</delete>
+	
+</mapper>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="IfPscldPoint">
+	<resultMap type="qss.vo.IfPscldPointVo" id="IfPscldPointVo" />
+	<resultMap type="qss.vo.MinMaxVo" id="MinMaxVo" />
+	
+	<select id="IfPscldPoint_List" statementType="CALLABLE" parameterType="hashmap">
+		{ CALL IfPscldPoint_package.IfPscldPoint_List
+			(
+				#{IfPscldPointResult, mode=OUT, jdbcType=CURSOR, javaType=java.sql.ResultSet, resultMap=IfPscldPointVo},
+				#{MinMaxResult, mode=OUT, jdbcType=CURSOR, javaType=java.sql.ResultSet, resultMap=MinMaxVo}
+			)
+		}
+	</select>
+	
+	<select id="IfPscldPoint_Update" statementType="CALLABLE" parameterType="hashmap">
+		{ CALL IfPscldPoint_package.IfPscldPoint_Update
+			(
+				#{minIdx, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer},
+				#{maxIdx, mode=IN, jdbcType=INTEGER, javaType=java.lang.Integer}
+			)
+		}
+	</select>
+</mapper>
