@@ -4,9 +4,11 @@ import java.util.Arrays;
 
 import org.springframework.web.multipart.MultipartFile;
 
-public class UploadVo extends CommonVo {
+public class MainFeedVo extends CommonVo {
 	private static final long serialVersionUID = 1L;
-
+	
+	private String mainFeedIdx;
+	
 	private String fileContentIdx;
 	private String fileName;
 	private String fileSaveName;
@@ -41,8 +43,6 @@ public class UploadVo extends CommonVo {
 	private int[] checkboxArr;
 	private String contType;
 	private String regDt;
-	
-	private String mainFeedIdx;
 	
 	public String getFileContentIdx() {
 		return fileContentIdx;

@@ -17,63 +17,91 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import qss.impl.CommonImpl;
-import qss.impl.ContentsImpl;
+import qss.impl.InstaFeedImpl;
 import qss.service.Qss;
 import qss.vo.AjaxResultVO;
+import qss.vo.MainFeedVo;
 import qss.vo.UploadVo;
 
 /**
- * 컨텐츠 > 컨텐츠 관리
- * <pre>
- * qss.controller
- *    |_ Contentsontroller.java
- *
- * </pre>
+ * 
+ * 인스타피드 관리
+ * 
  */
 @Controller
-public class ContentsController {
-	@Resource(name="contentsService")
-	Qss contentsService = new ContentsImpl();
+public class InstaFeedController {
+	@Resource(name="instaFeedService")
+	Qss instaFeedService = new InstaFeedImpl();
 
 	@Resource(name="commonService")
 	Qss commonService = new CommonImpl();
 
-	private static final Log logger = LogFactory.getLog(ContentsController.class);
+	private static final Log logger = LogFactory.getLog(InstaFeedController.class);
 
-	@RequestMapping(value="Contents/Main")
+	@RequestMapping(value="InstaFeed/Main")
     public String brandMain(@ModelAttribute("UploadVo")UploadVo uploadVo, HttpSession session, ModelMap model, HttpServletRequest request) throws Exception
 	{
 		if ((String)session.getAttribute("id") != null) {
-			return "/Contents/Main";
+			return "/InstaFeed/Main";
 		} else {
 			return "redirect:/Logout";
 		}
     }
+	
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "InstaFeed/InstaFeedList")
+	@ResponseBody
+	public AjaxResultVO ContentList(UploadVo uploadVo, HttpSession session) throws Exception {
+		AjaxResultVO result = new AjaxResultVO();
+		Map<String, Object> messages = new HashMap<String, Object>();
 
-	@RequestMapping(value = "Contents/Form")
+		uploadVo.setDomainIdx((String)session.getAttribute("domainIdx"));
+
+		try {
+			uploadVo.setCaseString("InstaFeed_InstaFeedList");
+			List<MainFeedVo> list = (List<MainFeedVo>) instaFeedService.SelectListData(uploadVo);
+			result.setData(list);
+
+			uploadVo.setCaseString("InstaFeed_InstaFeedListCnt");
+			result.setiTotalDisplayRecords(instaFeedService.DataByCnt(uploadVo));
+
+			result.setData(list);
+
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			result.setResultCode(2);
+			messages.put("title", "서버오류가 발생하였습니다.");
+			messages.put("detail", e.getMessage().replaceAll(";", "\n"));
+			result.setMessages(messages);
+		}
+
+		return result;
+	}
+
+	@RequestMapping(value = "InstaFeed/Form")
 	public String UrlForm(@ModelAttribute("UploadVo") UploadVo uploadVo, ModelMap model, HttpSession session) throws Exception
 	{
 		if ((String) session.getAttribute("id") != null) {
 			model.addAttribute(uploadVo);
-			return "/Contents/Form";
+			return "/InstaFeed/Form";
 		} else {
 			return "/Logout";
 		}
 	}
 	
-	@RequestMapping(value = "Contents/Create")
+	@RequestMapping(value = "InstaFeed/Create")
 	@ResponseBody
 	public AjaxResultVO CreateUrl(UploadVo uploadVo, HttpSession session) throws Exception {
 		AjaxResultVO result = new AjaxResultVO();
 		Map<String, Object> messages = new HashMap<String, Object>();
 
 		try {
-			uploadVo.setCaseString("Contents_Create");
+			uploadVo.setCaseString("InstaFeed_Create");
 			uploadVo.setId((String)session.getAttribute("id"));
 			uploadVo.setRegUser((String)session.getAttribute("id"));
 			uploadVo.setModUser((String)session.getAttribute("id"));
 
-			int resultCode = contentsService.InsertData(uploadVo);
+			int resultCode = instaFeedService.InsertData(uploadVo);
 
 			if (resultCode > 0)
 			{
@@ -96,7 +124,7 @@ public class ContentsController {
 	}
 
 
-	@RequestMapping("Contents/Delete")
+	@RequestMapping("InstaFeed/Delete")
 	@ResponseBody
 	public AjaxResultVO Delete(UploadVo uploadVo, HttpSession session) throws Exception
 	{	
@@ -104,9 +132,9 @@ public class ContentsController {
 		Map<String, Object> messages = new HashMap<String, Object>();
 		
 		try {
-			uploadVo.setCaseString("Contents_Delete");
+			uploadVo.setCaseString("InstaFeed_Delete");
 			uploadVo.setModUser((String)session.getAttribute("id"));
-			int cnt = contentsService.DeleteDataByObjectParam(null, uploadVo);
+			int cnt = instaFeedService.DeleteDataByObjectParam(null, uploadVo);
 			
 			if (0 == cnt) {
 				result.setResultCode(1);

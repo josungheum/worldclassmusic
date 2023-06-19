@@ -2112,21 +2112,6 @@ function eventHandle(){
 			this.value = $.number(this.value);
 	});
 
-	//if($("#parentMenuId").val() != "SET00" && $("#parentMenuId").val() != "STO00" && $("#parentMenuId").val() != "BMT00" && $("#parentMenuId").val() != "CON00" && $('#brandIdx').val() == 0 && $("#mobileYn").val() != "Y"){
-	if($("#parentMenuId").val() != "SET00" && $("#parentMenuId").val() != "STO00" && ($('#brandIdx').val() == 0) && $("#mobileYn").val() != "Y" && ($('#contDomainIdx').val() == 0 || $('#contDomainIdx').val() == null)){
-	//if($("#parentMenuId").val() != "SET00" && $("#parentMenuId").val() != "STO00" && ($('#brandIdx').val() == 0 || $('#francIdx').val() == 0) && $("#mobileYn").val() != "Y"){
-		$('button').not(".notDisabled").attr('disabled', true);
-		$("input[type!='search']").not(".notDisabled").attr('disabled', true);
-	}else{
-		$('button').not(".notDisabled").attr('disabled', false);
-		$("input[type!='search']").not(".notDisabled").attr('disabled', false);
-	}
-
-	// 매출 보고서는 모든 버튼 활성화
-	if(($("#menuId").val() == "SAL03" && $('#brandIdx').val() != 0) && $("#mobileYn").val() != "Y"){
-		$('button').attr('disabled', false);
-		$("input[type!='search']").attr('disabled', false);
-	}
 }
 
 function activeDisabled(){

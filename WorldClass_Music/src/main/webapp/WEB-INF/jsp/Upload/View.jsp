@@ -30,33 +30,10 @@
 		var name = $('#SaveFolder').val();
 		var contType="";
 		var groupIdx="";
-		if (name == 'Screen') {
-			max = 5;
-		}
-		else if(name == 'OptProdItem' || name == 'Logo' || name == 'Event') {
-			max = 1;
-			acceptedFiles = '.jpeg,.jpg,.png,.PNG,.JPEG,.JPG';
-		}
-		else if(name == 'orderProd') {
-			max = 1;
-			acceptedFiles = '.jpeg,.jpg,.png,.PNG,.JPEG,.JPG';
-		}
-		else if (name == 'Brand'){
-			max = 1;
-			acceptedFiles = '.jpeg,.jpg,.png,.PNG,.JPEG,.JPG';
-		}
-		else if (name == 'Addition' || name == 'Detail'){
-			max = 10;
-			acceptedFiles = '.jpg,.jpeg,.png,.avi,.wmv,.mpeg,.mp4,.JPG,.JPEG,.PNG,.AVI,.WMV,.MPEG,.MP4';
-		}
-		else if (name == 'Shop'){
-			var imageSize = $('.contentAdditionImage').length;
-			max = 6 - imageSize;
-			acceptedFiles = '.jpg,.jpeg,.png,.JPG,.JPEG,.PNG';
-		}
-		else if (name == 'Content'){
+		if (name == 'MainFeed') {
 			max = 1;
 			acceptedFiles = '.jpg,.jpeg,.png,.avi,.wmv,.mpeg,.mp4,.JPG,.JPEG,.PNG,.AVI,.WMV,.MPEG,.MP4';
+			contType= 'M'
 		}
 		else if (name == 'CommonContent'){
 			max = 10;
@@ -100,21 +77,12 @@
 					}
 				});
 				this.on('addedfiles', function (file, resq) {
-// 					console.log("addedfiles");
-					/* if(file.length+this.files.length > 5 && curMax == false){
-						$.modalCommon.alertView('파일은 최대 ' + max + '개 까지 업로드 가능합니다.');
-						curMax = true;
-						this.removeFile(file);
-						return false;
-					} */
-
 					if(msg != ''){
 						$.modalCommon.alertView(msg);
 						msg = '';
 					}
 				});
 				this.on('addedfile', function (file) {
-// 					console.log("addedfile");
 					if(file.length+this.files.length > 5){
 						this.removeFile(file);
 						return false;
@@ -124,8 +92,6 @@
 // 						$.modalCommon.alertView('파일 용량을 확인하세요.(MAX : 5000MB)');
 						msg = '파일 용량을 확인하세요.(MAX : 5000MB)';
 						this.removeFile(file);
-// 						this.removeAllFiles(true);
-// 						$.FileUpload.Data = null;
 						return false;
 					}
 

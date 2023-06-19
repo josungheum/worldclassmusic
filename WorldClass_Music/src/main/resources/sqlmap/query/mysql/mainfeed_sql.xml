@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MainFeed">
+	
+	<select id="MainFeed_MainFeedList" parameterType="qss.vo.UploadVo" resultType="qss.vo.UploadVo">
+	/*
+	ID : contents_sql.MainFeed_MainFeedList
+	DEC : 메인피드 컨텐츠 리스트 조회
+	*/
+	<include refid="Common.BeforeSQL"/>
+			SELECT 	a.MAIN_FEED_IDX,
+					a.FILE_CONTENT_IDX,
+					b.FILE_NAME,
+					b.THUMBNAIL_PATH,
+					a.ORDER_SEQ,
+					a.ACTIVE_YN,
+					a.MOD_DATE
+			FROM main_feed a INNER JOIN file_content b ON a.FILE_CONTENT_IDX = b.FILE_CONTENT_IDX
+			WHERE IFNULL(a.DEL_YN,'N') = 'N'
+			AND IFNULL(b.DEL_YN,'N') = 'N'
+			AND b.cont_type = 'M'
+			<if test="sSearch != null and sSearch != ''">
+				AND b.FILE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			 </if>
+			ORDER BY a.ORDER_SEQ DESC
+	<include refid="Common.AfterSQL"/>
+	</select>
+
+
+	<select id="MainFeed_MainFeedListCnt" parameterType="qss.vo.UploadVo" resultType="int">
+		/*
+		  ID  : MainFeed_sql.MainFeed_MainFeedListCnt
+		  DEC : 메인피드 컨텐츠 리스트 Cnt 조회
+		*/
+			SELECT COUNT(*)
+			FROM
+			(
+			SELECT 	a.MAIN_FEED_IDX,
+					a.FILE_CONTENT_IDX,
+					b.FILE_NAME,
+					a.ORDER_SEQ,
+					a.ACTIVE_YN,
+					a.MOD_DATE
+			FROM main_feed a INNER JOIN file_content b ON a.FILE_CONTENT_IDX = b.FILE_CONTENT_IDX
+			WHERE IFNULL(a.DEL_YN,'N') = 'N'
+			AND IFNULL(b.DEL_YN,'N') = 'N'
+			AND b.cont_type = 'M'
+			<if test="sSearch != null and sSearch != ''">
+				AND b.FILE_NAME LIKE CONCAT('%',#{sSearch},'%')
+			</if>
+			) t
+	</select>
+	
+	<insert id="MainFeed_Create" parameterType="UploadVo">
+		<selectKey resultType="int" keyProperty="orderSeq" order="BEFORE">
+	        SELECT D.ORDER_SEQ FROM (SELECT (SELECT ifnull(MAX(ORDER_SEQ) + 1, '1') FROM MAIN_FEED WHERE IFNULL(DEL_YN,'N') = 'N') AS ORDER_SEQ) AS D      
+	    </selectKey>    
+		INSERT INTO main_feed(
+				FILE_CONTENT_IDX,
+				ORDER_SEQ,
+				REG_USER,
+				REG_DATE,
+				MOD_USER,
+				MOD_DATE
+		)
+		VALUES 
+		(
+		    #{fileContentIdx}
+		  , #{orderSeq}
+		  , #{regUser}
+		  , now()
+		  , #{regUser}
+		  , now()
+		)
+	</insert>
+	
+	<update id="MainFeed_Delete"  parameterType="qss.vo.UploadVo" >
+		/*
+		  ID  : mainfeed_sql.MainFeed_Delete
+		  DEC : 메인피드 이미지 삭제
+		*/
+		UPDATE MAIN_FEED
+		SET    DEL_YN = 'Y'
+		     , MOD_USER = #{modUser}
+		     , MOD_DATE = now()
+		 WHERE MAIN_FEED_IDX IN
+		<foreach collection="checkboxArr" item="contentIdx"  open="(" close=")" separator=",">
+            #{contentIdx}
+        </foreach>
+	</update>
+	
+	<update id="MainFeed_ActiveYn"  parameterType="qss.vo.UploadVo" >
+		/*
+		  ID  : mainfeed_sql.MainFeed_Delete
+		  DEC : 메인피드 이미지 비활성화
+		*/
+		UPDATE MAIN_FEED
+		SET    ACTIVE_YN = #{activeYn}
+		     , MOD_USER = #{modUser}
+		     , MOD_DATE = now()
+		 WHERE MAIN_FEED_IDX = #{mainFeedIdx}
+	</update>
+	
+</mapper>

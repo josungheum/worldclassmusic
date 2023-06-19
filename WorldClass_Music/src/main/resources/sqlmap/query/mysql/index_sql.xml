@@ -19,18 +19,6 @@
 			,(SELECT IFNULL(MAX(id), 'N') AS idCheck FROM USERS WHERE ID = #{id} AND IFNULL(ACTIVE_YN, 'Y') = 'Y') AS activeCheck
 			,(SELECT IFNULL(MAX(id), 'N') AS passwordCheck FROM USERS WHERE ID = #{id} AND PASSWORD = #{password}) AS passwordCheck
 			,(SELECT IFNULL(PASSWORD_FAIL_COUNT, 0)  AS passwordCntCheck FROM USERS WHERE ID = #{id}) AS passwordCntCheck
-			,(
-		        SELECT IFNULL(MAX(id), 'N') AS passwordCheck
-		        FROM USERS U
-		        WHERE ID = #{id}
-		        AND (((SELECT DEL_YN FROM franchisee WHERE DOMAIN_IDX = U.DOMAIN_IDX AND BRAND_IDX = U.BRAND_IDX AND FRANC_IDX = U.FRANC_IDX) = 'N') OR (ADMIN_TYPE = 'ADM0001' OR ADMIN_TYPE = 'ADM0002'))
-		        ) AS francCheck
-		    ,(
-		        SELECT IFNULL(MAX(id), 'N') AS passwordCheck
-		        FROM USERS U
-		        WHERE ID = #{id}
-		        AND (((SELECT DEL_YN FROM brand WHERE DOMAIN_IDX = U.DOMAIN_IDX AND BRAND_IDX = U.BRAND_IDX) = 'N') OR ADMIN_TYPE = 'ADM0001')
-		    ) AS brandCheck
 		FROM DUAL
 	</select>
 	<select id="Login_GetLockCheck" statementType="CALLABLE" parameterType="hashmap">

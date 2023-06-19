@@ -152,12 +152,10 @@ public class UploadController {
 							uploadVo.setSaveFolder(uploadVo.getSaveFolder());
 							uploadVo.setCheckSum(checkSum);
 
-							//uploadVo.setRegUser((Integer)session.getAttribute("IDX"));
-
 							uploadVo.setCaseString("File_Create");
 							uploadVo.setRegUser((String)session.getAttribute("id"));
 							String returnKey = uploadService.InsertReturnKeyData(uploadVo);
-
+							
 							if (returnKey != null) {
 								uv.setFileContentIdx(returnKey);
 								uv.setFileName(uploadVo.getFileName());
@@ -167,7 +165,12 @@ public class UploadController {
 								uv.setFileSize(uploadVo.getFileSize());
 								uv.setCheckSum(uploadVo.getCheckSum());
 								uv.setPlayTime(uploadVo.getPlayTime());
-
+								uv.setRegUser((String)session.getAttribute("id"));
+								
+								if(uploadVo.getContType().equals("M")) {
+									uv.setCaseString("MainFeed_Create");
+									uploadService.InsertData(uv);
+								}
 							}
 							else {
 								uv = null;
@@ -183,6 +186,7 @@ public class UploadController {
 				}
 			}
 			catch (Exception e) {
+				e.printStackTrace();
 				logger.error(e.getMessage());
 				uv.setErrorCode(-1);
 				uv.setMessages("서버오류가 발생하였습니다.");

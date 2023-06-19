@@ -9,31 +9,30 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 import egovframework.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import qss.dao.UploadDao;
+import qss.dao.InstaFeedDao;
 import qss.service.Qss;
 import qss.vo.CommonVo;
 import qss.vo.UploadVo;
 
-@Service("uploadService")
-public class UploadImpl extends EgovAbstractServiceImpl  implements Qss {
-	@Resource(name="uploadDao")
-	private UploadDao uploadDao; 
-	
+@Service("instaFeedService")
+public class InstaFeedImpl extends EgovAbstractServiceImpl implements Qss {
+	@Resource(name="instaFeedDao")
+	private InstaFeedDao instaFeedDao;
+
 	@Override
 	public List<?> SelectListData(CommonVo commonVo) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		return instaFeedDao.SelectListData((UploadVo)commonVo);
 	}
 
 	@Override
 	public int DataByCnt(CommonVo commonVo) {
-		// TODO Auto-generated method stub
-		return 0;
+		return instaFeedDao.DataByCnt(commonVo);
 	}
 
 	@Override
 	public CommonVo SelectData(CommonVo commonVo) throws Exception {
-		return uploadDao.SelectData((UploadVo)commonVo);
+		return instaFeedDao.SelectData((UploadVo)commonVo);
 	}
 
 	@Override
@@ -44,25 +43,21 @@ public class UploadImpl extends EgovAbstractServiceImpl  implements Qss {
 
 	@Override
 	public int InsertData(CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
-		return uploadDao.InsertData((UploadVo)commonVo);
+		return instaFeedDao.InsertData((UploadVo)commonVo);
 	}
 
 	@Override
 	public int UpdateData(CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+		return instaFeedDao.UpdateData((UploadVo)commonVo);
 	}
 
 	@Override
 	public int DeleteDataByObjectParam(Map<String, Object> ID, CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+		return instaFeedDao.DeleteDataByObjectParam((UploadVo)commonVo);
 	}
 
 	@Override
 	public String SelectByReturnString(CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
@@ -75,7 +70,7 @@ public class UploadImpl extends EgovAbstractServiceImpl  implements Qss {
 	@Override
 	public String InsertReturnKeyData(CommonVo commonVo) {
 		// TODO Auto-generated method stub
-		return uploadDao.InsertReturnKeyData((UploadVo)commonVo);
+		return null;
 	}
 
 	@Override

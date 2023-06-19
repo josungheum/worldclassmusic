@@ -48,7 +48,7 @@
 		var result = $.ajaxUtil.ajaxDefault(url, param, $('#user'), $('#pass'));
 
 		if(result.resultCode == 0 && result.messages == null){
-			$('#pageSend').attr('action', '${pageContext.request.contextPath}/Resource/Main');
+			$('#pageSend').attr('action', '${pageContext.request.contextPath}/MainFeed/Main');
 			$('#user').val(null);
 			$('#pass').val(null);
 			$('#pageSend').submit();

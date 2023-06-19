@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import egovframework.rte.psl.dataaccess.EgovAbstractMapper;
 import qss.vo.CommonVo;
-import qss.vo.FranchiseeVo;
+import qss.vo.DomainVo;
 import qss.vo.MenuVo;
 
 @Repository("commonDao")
@@ -54,11 +54,9 @@ public class CommonDao extends EgovAbstractMapper {
 	public List<?> SelectListData(CommonVo commonVo) {
 		Map<String, Object> params = new HashMap<String, Object>();
 
-		List<FranchiseeVo> list = null;
+		List<DomainVo> list = null;
 
 		params.put("domainIdx", commonVo.getDomainIdx());
-		params.put("brandIdx", commonVo.getBrandIdx());
-		params.put("francIdx", commonVo.getFrancIdx());
 		params.put("serchKey", commonVo.getSerchKey());
 		params.put("sessionAdminType", commonVo.getSessionAdminType());
 		list = selectList(commonVo.getCaseString(), params);

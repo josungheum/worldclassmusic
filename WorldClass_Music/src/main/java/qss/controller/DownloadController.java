@@ -17,10 +17,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import qss.impl.KioskClientImpl;
 import qss.impl.UploadImpl;
 import qss.service.Qss;
-import qss.vo.KioskClientVo;
+
 import qss.vo.UploadVo;
 
 /**
@@ -38,9 +37,6 @@ import qss.vo.UploadVo;
 public class DownloadController {
 	@Resource(name = "uploadService")
 	Qss uploadService = new UploadImpl();
-
-	@Resource(name = "kioskClientService")
-	Qss kioskClientService = new KioskClientImpl();
 
 	@Value("#{serverProp['Server.upload.path']}")
 	private String configPath;
@@ -104,32 +100,7 @@ public class DownloadController {
 		}
 
 	}
-
-//	@SuppressWarnings("unchecked")
-//	private String check_browser(HttpServletRequest request) {
-//		String browser = "";
-//		String header = request.getHeader("User-Agent");
-//		// 신규추가된 indexof : Trident(IE11) 일반 MSIE로는 체크 안됨
-//		if (header.indexOf("MSIE") > -1 || header.indexOf("Trident") > -1) {
-//			browser = "ie";
-//		}
-//		// 크롬일 경우
-//		else if (header.indexOf("Chrome") > -1) {
-//			browser = "chrome";
-//		}
-//		// 오페라일경우
-//		else if (header.indexOf("Opera") > -1) {
-//			browser = "opera";
-//		}
-//		// 사파리일 경우
-//		else if (header.indexOf("Apple") > -1) {
-//			browser = "safari";
-//		} else {
-//			browser = "firfox";
-//		}
-//		return browser;
-//	}
-
+	
 	private String getDisposition(String down_filename, String browser_check) throws UnsupportedEncodingException {
 		String prefix = "attachment;filename=";
 		String encodedfilename = null;
@@ -153,64 +124,5 @@ public class DownloadController {
 		return prefix + encodedfilename;
 	}
 
-	@RequestMapping(value = "download/ClientFile/{IDX}")
-	@ResponseBody
-	public void clientDownload(HttpServletRequest request, HttpServletResponse response, KioskClientVo kioskClientVo) throws Exception {
-
-		String contextRealPath = request.getSession().getServletContext().getRealPath("");
-		File filePathLocation = new File(contextRealPath);
-		contextRealPath = filePathLocation.getParent();
-		OutputStream out = null;
-		FileInputStream in = null;
-		try {
-//			if (kioskClientVo.getIDX() != 0) {
-//				kioskClientVo.setCaseString("KioskClient_ClientInfo");
-////				kioskClientVo = (KioskClientVo) kioskClientService.SelectData(kioskClientVo);
-//
-////				String filePath = "/app/resource/client/" + kioskClientVo.getSAVEFILENAME();
-////				String filePath = "C:/qss/app/resource/client/" + kioskClientVo.getFILENAME();
-////				String realfilename = kioskClientVo.getFILENAME();
-////				File downloadfile = new File(filePath);
-//
-//				response.setContentType("application/octet-stream; charset=utf-8");
-////				response.setContentLength((int) downloadfile.length());
-////
-////				response.setHeader("Content-Disposition", getDisposition(realfilename, ""));
-////				response.setHeader("Content-Transfer-Encoding", "binary");
-////				out = response.getOutputStream();
-////				in = new FileInputStream(downloadfile);
-//				// Spring framework 사용할 경우
-//				// FileCopyUtils.copy(fis, out);
-//
-//				// 일반 자바/JSP 파일다운로드
-//				byte[] buf = new byte[8192];
-//				int bytesread = 0, bytesBuffered = 0;
-//				while ((bytesread = in.read(buf)) > -1) {
-//					out.write(buf, 0, bytesread);
-//					bytesBuffered += bytesread;
-//					if (bytesBuffered > 1024 * 1024) { // flush after 1MB
-//						bytesBuffered = 0;
-//						out.flush();
-//					}
-//				}
-//				out.flush();
-//			}
-		} catch (Exception e) {
-			logger.error(e.getMessage());
-		} finally {
-			try {
-				if (in != null) {
-					in.close();
-				}
-
-				if(out != null) {
-					out.flush();
-					out.close();
-				}
-			} catch (Exception e) {
-				logger.error(e.getMessage());
-			}
-		}
-
-	}
+	
 }
