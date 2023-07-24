@@ -31,4 +31,8 @@ public class UploadDao extends EgovAbstractMapper {
 	public int InsertData(UploadVo uploadVo) throws Exception {
 		return insert(uploadVo.getCaseString(), uploadVo);
 	}
+	
+	public int UpdateData(UploadVo uploadVo) throws Exception {
+		return update(uploadVo.getCaseString(), uploadVo);
+	}
 }

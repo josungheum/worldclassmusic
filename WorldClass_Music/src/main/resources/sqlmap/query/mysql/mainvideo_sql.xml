@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="InstaFeed">
-	<select id="InstaFeed_InstaFeedList" parameterType="qss.vo.UploadVo" resultType="qss.vo.UploadVo">
+<mapper namespace="MainVideo">
+	
+	<select id="MainVideo_MainVideoList" parameterType="qss.vo.UploadVo" resultType="qss.vo.UploadVo">
 	/*
-	ID : contents_sql.InstaFeed_InstaFeedList
-	DEC : 인스타 피드 컨텐츠 리스트 조회
+	ID : contents_sql.MainVideo_MainVideoList
+	DEC : 메인피드 컨텐츠 리스트 조회
 	*/
 	<include refid="Common.BeforeSQL"/>
-			SELECT 	a.INSTA_FEED_IDX,
+			SELECT 	a.MAIN_VIDEO_IDX,
 					a.FILE_CONTENT_IDX,
 					b.FILE_NAME,
 					b.THUMBNAIL_PATH,
 					a.ORDER_SEQ,
 					a.ACTIVE_YN,
-					a.MOD_DATE,
-					a.INSTA_URL
-			FROM insta_feed a INNER JOIN file_content b ON a.FILE_CONTENT_IDX = b.FILE_CONTENT_IDX
+					a.MOD_DATE
+			FROM main_video a INNER JOIN file_content b ON a.FILE_CONTENT_IDX = b.FILE_CONTENT_IDX
 			WHERE IFNULL(a.DEL_YN,'N') = 'N'
 			AND IFNULL(b.DEL_YN,'N') = 'N'
-			AND b.cont_type = 'I'
+			AND b.cont_type = 'V'
 			<if test="sSearch != null and sSearch != ''">
 				AND b.FILE_NAME LIKE CONCAT('%',#{sSearch},'%')
 			 </if>
@@ -28,37 +28,36 @@
 	</select>
 
 
-	<select id="InstaFeed_InstaFeedListCnt" parameterType="qss.vo.UploadVo" resultType="int">
+	<select id="MainVideo_MainVideoListCnt" parameterType="qss.vo.UploadVo" resultType="int">
 		/*
-		  ID  : InstaFeed_sql.InstaFeed_InstaFeedListCnt
-		  DEC : 인스타 피드 컨텐츠 리스트 Cnt 조회
+		  ID  : MainVideo_sql.MainVideo_MainVideoListCnt
+		  DEC : 메인피드 컨텐츠 리스트 Cnt 조회
 		*/
 			SELECT COUNT(*)
 			FROM
 			(
-			SELECT 	a.INSTA_FEED_IDX,
+			SELECT 	a.MAIN_VIDEO_IDX,
 					a.FILE_CONTENT_IDX,
 					b.FILE_NAME,
 					a.ORDER_SEQ,
 					a.ACTIVE_YN,
 					a.MOD_DATE
-			FROM insta_feed a INNER JOIN file_content b ON a.FILE_CONTENT_IDX = b.FILE_CONTENT_IDX
+			FROM main_video a INNER JOIN file_content b ON a.FILE_CONTENT_IDX = b.FILE_CONTENT_IDX
 			WHERE IFNULL(a.DEL_YN,'N') = 'N'
 			AND IFNULL(b.DEL_YN,'N') = 'N'
-			AND b.cont_type = 'I'
+			AND b.cont_type = 'V'
 			<if test="sSearch != null and sSearch != ''">
 				AND b.FILE_NAME LIKE CONCAT('%',#{sSearch},'%')
 			</if>
 			) t
 	</select>
 	
-	<insert id="InstaFeed_Create" parameterType="UploadVo">
+	<insert id="MainVideo_Create" parameterType="UploadVo">
 		<selectKey resultType="int" keyProperty="orderSeq" order="BEFORE">
-	        SELECT D.ORDER_SEQ FROM (SELECT (SELECT ifnull(MAX(ORDER_SEQ) + 1, '1') FROM insta_feed WHERE IFNULL(DEL_YN,'N') = 'N') AS ORDER_SEQ) AS D      
+	        SELECT D.ORDER_SEQ FROM (SELECT (SELECT ifnull(MAX(ORDER_SEQ) + 1, '1') FROM main_video WHERE IFNULL(DEL_YN,'N') = 'N') AS ORDER_SEQ) AS D      
 	    </selectKey>    
-		INSERT INTO insta_feed(
+		INSERT INTO main_video(
 				FILE_CONTENT_IDX,
-				INSTA_URL,
 				ORDER_SEQ,
 				REG_USER,
 				REG_DATE,
@@ -68,7 +67,6 @@
 		VALUES 
 		(
 		    #{fileContentIdx}
-		  , #{instaUrl}
 		  , #{orderSeq}
 		  , #{regUser}
 		  , now()
@@ -77,43 +75,42 @@
 		)
 	</insert>
 	
-	<update id="InstaFeed_Delete"  parameterType="qss.vo.UploadVo" >
+	<update id="MainVideo_Delete"  parameterType="qss.vo.UploadVo" >
 		/*
-		  ID  : InstaFeed_sql.InstaFeed_Delete
-		  DEC : 인스타 피드 삭제
+		  ID  : MainVideo_sql.MainVideo_Delete
+		  DEC : 메인피드 이미지 삭제
 		*/
-		UPDATE insta_feed
+		UPDATE main_video
 		SET    DEL_YN = 'Y'
 		     , MOD_USER = #{modUser}
 		     , MOD_DATE = now()
-		 WHERE INSTA_FEED_IDX IN
+		 WHERE MAIN_VIDEO_IDX IN
 		<foreach collection="checkboxArr" item="contentIdx"  open="(" close=")" separator=",">
             #{contentIdx}
         </foreach>
 	</update>
 	
-	<update id="InstaFeed_ActiveYn"  parameterType="qss.vo.UploadVo" >
+	<update id="MainVideo_ActiveYn"  parameterType="qss.vo.UploadVo" >
 		/*
-		  ID  : InstaFeed_sql.InstaFeed_Delete
-		  DEC : 인스타 피드 비활성화
+		  ID  : MainVideo_sql.MainVideo_Delete
+		  DEC : 메인피드 이미지 비활성화
 		*/
-		UPDATE insta_feed
+		UPDATE main_video
 		SET    ACTIVE_YN = #{activeYn}
 		     , MOD_USER = #{modUser}
 		     , MOD_DATE = now()
-		 WHERE INSTA_FEED_IDX = #{instaFeedIdx}
+		 WHERE MAIN_VIDEO_IDX = #{mainVideoIdx}
 	</update>
 	
-	<update id="InstaFeed_SortUpdate"  parameterType="qss.vo.UploadVo" >
+	<update id="MainVideo_SortUpdate"  parameterType="qss.vo.UploadVo" >
 		/*
-		  ID  : InstaFeed_sql.InstaFeed_SortUpdate
-		  DEC : 인스타 피드 순서 변경
+		  ID  : MainVideo_sql.MainVideo_SortUpdate
+		  DEC : 메인비디오 순서 변경
 		*/
-		UPDATE insta_feed
+		UPDATE main_video
 		SET    ORDER_SEQ = #{orderSeq}
 		     , MOD_USER = #{modUser}
 		     , MOD_DATE = now()
-		 WHERE INSTA_FEED_IDX = #{instaFeedIdx}
+		 WHERE MAIN_VIDEO_IDX = #{mainVideoIdx}
 	</update>
-	
 </mapper>

@@ -23,7 +23,6 @@
 			<if test="sSearch != null and sSearch != ''">
 				AND b.FILE_NAME LIKE CONCAT('%',#{sSearch},'%')
 			 </if>
-			ORDER BY a.ORDER_SEQ DESC
 	<include refid="Common.AfterSQL"/>
 	</select>
 
@@ -102,4 +101,15 @@
 		 WHERE MAIN_FEED_IDX = #{mainFeedIdx}
 	</update>
 	
+	<update id="MainFeed_SortUpdate"  parameterType="qss.vo.UploadVo" >
+		/*
+		  ID  : mainfeed_sql.MainFeed_SortUpdate
+		  DEC : 메인피드 순서 변경
+		*/
+		UPDATE MAIN_FEED
+		SET    ORDER_SEQ = #{orderSeq}
+		     , MOD_USER = #{modUser}
+		     , MOD_DATE = now()
+		 WHERE MAIN_FEED_IDX = #{mainFeedIdx}
+	</update>
 </mapper>

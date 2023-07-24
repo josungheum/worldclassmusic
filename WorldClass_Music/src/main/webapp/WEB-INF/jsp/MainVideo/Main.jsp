@@ -7,18 +7,17 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <div class="box box-widget">
 	<div class="box-header">
-		<div class="user-block under-line">Insta Feed 컨텐츠 목록</div>
+		<div class="user-block under-line">Main Video 목록</div>
 	</div>
 	<div>
 		<div class="box-body">
-			<table id="instaFeedTable" class="table table-striped">
+			<table id="mainVideoTable" class="table table-striped">
 				<thead>
 					<tr>
 						<th><input type="checkbox" name="ARRIDX_ALL" onclick="$.checkboxUtil.checkAll(this, 'checkboxArr');" id="totCheckboxArr" /></th>
 						<th>No.</th>
 						<th>썸네일</th>
-						<th style="width:10%;">파일 명</th>
-						<th style="width:20%;">인스타 URL</th>
+						<th>컨텐츠 명</th>
 						<th>순서</th>
 						<th>활성화</th>
 						<th>최종 수정일</th>
@@ -37,24 +36,22 @@
 </div>
 <script type="text/javaScript">
 	$(document).ready(function () {
-		InstaFeedList();
+		MainVideoList();
 	});
 
-	function InstaFeedList(){
+	function MainVideoList(){
 		var optObject = {};
-		
 
-		optObject.id = "#instaFeedTable";
-		optObject.url = '<c:url value="/InstaFeed/InstaFeedList"/>';
+		optObject.id = "#mainVideoTable";
+		optObject.url = '<c:url value="/MainVideo/MainVideoList"/>';
 		optObject.arrColumnDefs = [
 	    ];
 
 		optObject.arrColumns = [
-			{data: "instaFeedIdx"},
-            {data: "instaFeedIdx"},
+			{data: "mainVideoIdx"},
+            {data: "mainVideoIdx"},
             {data: "thumbnailPath"},
             {data: "fileName"},
-            {data: "instaUrl"},
             {data: "orderSeq"},
             {data: "activeYn"},
             {data: "modDate"}
@@ -78,7 +75,6 @@
                    	return dataTableRowIdx(meta);
                 }
             },
-
             {
                 'targets': 2,
                 "orderable": false,
@@ -93,14 +89,6 @@
             },
             {
                 'targets': 3,
-                "orderable": false,
-                'className': 'text-center',
-                'render': function (data, type, full, meta) {
-                   	return fnDataTableRenderText(data);
-                }
-            },
-            {
-                'targets': 4,
                 'className': 'text-center tl270',
                 'display': 'display',
                 'render': function (data, type, full, meta) {
@@ -109,26 +97,26 @@
 
             },
             {
-                'targets': 5,
+                'targets': 4,
                 'className': 'text-center',
                 'render': function (data, type, full, meta) {
                 	return fnDataTableRenderText(data);
                 }
             },
             {
-                'targets': 6,
+                'targets': 5,
                 'className': 'text-center',
                 'render': function (data, type, full, meta) {
                 	 if(fnDataTableRenderText(data) == 'Y'){
-		            	return '<input type="checkbox" data-group-cls="btn-group-sm" class="activeYn" id="active'+full.instaFeedIdx+'" onchange="Active(\'' + full.instaFeedIdx + '\',\''+ full.instaFeedIdx + '\');" data-reverse checked>';
+		            	return '<input type="checkbox" data-group-cls="btn-group-sm" class="activeYn" id="active'+full.mainVideoIdx+'" onchange="Active(\'' + full.mainVideoIdx + '\',\''+ full.mainVideoIdx + '\');" data-reverse checked>';
 	               	}
 		            else{
-		               	return '<input type="checkbox" data-group-cls="btn-group-sm" class="activeYn" id="active'+full.instaFeedIdx+'" onchange="Active(\'' + full.instaFeedIdx + '\',\''+ full.instaFeedIdx + '\');" data-reverse>';
+		               	return '<input type="checkbox" data-group-cls="btn-group-sm" class="activeYn" id="active'+full.mainVideoIdx+'" onchange="Active(\'' + full.mainVideoIdx + '\',\''+ full.mainVideoIdx + '\');" data-reverse>';
 		            }
                 }
             },
             {
-                'targets': 7,
+                'targets': 6,
                 'className': 'text-center',
                 'render': function (data, type, full, meta) {
                 	return fnDataTableRenderText(data);
@@ -139,7 +127,8 @@
 		optObject.fnDrawCallback = function (data){
 			$('.activeYn').checkboxpicker(defaults = {	offLabel: 'OFF',	onLabel: 'ON'});
 		}
-		optObject.searching = false;
+		optObject.searching = true;
+		optObject.language = {"search": "MainVideo 명  "}
 		optObject.serverParams = function ( aoData ) {
             aoData.push( { "name": "defaultOrderName"   , "value": "orderSeq" } );
             aoData.push( { "name": "defaultOrderType"   , "value": "DESC" } );
@@ -153,10 +142,10 @@
 		var ext = ['PNG', 'JPEG', 'JPG', 'MP4'];
 
 		$.showUploadBox({
-			url: "/Upload/View/InstaFeed/",
+			url: "/Upload/View/MainVideo/",
 			width: 400,
 			height: 200,
-			title: 'InstaFeed컨텐츠 등록',
+			title: 'MainVideo컨텐츠 등록',
 			ext: ext,
 			Finished: contentFileUploadFinishedEH
 		});
@@ -164,17 +153,16 @@
 
 	function contentFileUploadFinishedEH(data) {
 		var jsonData = data.length > 0 ? data[0]:null;
-		InstaFeedList();
+		MainVideoList();
 	}
 
 	function Add(val) {
 		$.sessionCheck();
-        $.modalCommon.loadDataView('컨텐츠 등록', '<c:url value="/InstaFeed/Form"/>' , {contType: val});
+        $.modalCommon.loadDataView('컨텐츠 등록', '<c:url value="/MainVideo/Form"/>' , {contType: val});
 	}
 
 
 	function Delete() {
-		console.log("zzz");
 		$.sessionCheck();
 	    var arr = $.formOtherUtil.isArrCheck('contentCheckboxArr');
 
@@ -185,10 +173,10 @@
 	    	var callBack = function (result) {
 		    	if (result) {
 	                var param = { checkboxArr: arr};
-	                var dResult = $.ajaxUtil.ajaxArray('<c:url value="/InstaFeed/Delete"/>', param);
+	                var dResult = $.ajaxUtil.ajaxArray('<c:url value="/MainVideo/Delete"/>', param);
 
 	                if (dResult.resultCode == 0 ) {
-	                	InstaFeedList();
+	                	MainVideoList();
 						$.modalCommon.alertView('처리 되었습니다.');
 					} else {
 						$.modalCommon.close();
@@ -200,12 +188,12 @@
 	    }
 	}
 	
-	function Active(rowIdx, instaFeedIdx){
-		commonActive(rowIdx, { instaFeedIdx: instaFeedIdx}, '<c:url value="/InstaFeed/ActiveYn"/>');
+	function Active(rowIdx, mainVideoIdx){
+		commonActive(rowIdx, { mainVideoIdx: mainVideoIdx}, '<c:url value="/MainVideo/ActiveYn"/>');
 	}
 	
 	function orderChange(val) {
 		$.sessionCheck();
-        $.modalCommon.loadDataView('순서 변경', '<c:url value="/InstaFeed/SortForm"/>' , {contType: val});
+        $.modalCommon.loadDataView('순서 변경', '<c:url value="/MainVideo/SortForm"/>' , {contType: val});
 	}
 </script>

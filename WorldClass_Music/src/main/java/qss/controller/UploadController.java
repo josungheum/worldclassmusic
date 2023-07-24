@@ -165,10 +165,17 @@ public class UploadController {
 								uv.setFileSize(uploadVo.getFileSize());
 								uv.setCheckSum(uploadVo.getCheckSum());
 								uv.setPlayTime(uploadVo.getPlayTime());
+								uv.setInstaUrl(uploadVo.getInstaUrl());
 								uv.setRegUser((String)session.getAttribute("id"));
 								
 								if(uploadVo.getContType().equals("M")) {
 									uv.setCaseString("MainFeed_Create");
+									uploadService.InsertData(uv);
+								}else if(uploadVo.getContType().equals("I")) {
+									uv.setCaseString("InstaFeed_Create");
+									uploadService.InsertData(uv);
+								}else if(uploadVo.getContType().equals("V")) {
+									uv.setCaseString("MainVideo_Create");
 									uploadService.InsertData(uv);
 								}
 							}

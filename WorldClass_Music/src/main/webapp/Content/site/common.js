@@ -2230,6 +2230,16 @@ function dataTableRowIdx(meta)
     return rowIdx;
 }
 
+function dataTableRowIdx2(meta)
+{
+	console.log(meta);
+	var viewLength = meta.settings._iDisplayLength;
+	var totalLength = meta.settings._iRecordsDisplay;
+	var currLength = meta.settings._iDisplayStart;
+	var rowIdx = totalLength - ((currLength/viewLength)*viewLength+meta.row);
+    return -1*rowIdx;
+}
+
 function fnErrorMessage(json)
 {
 	var errorMassage = '네트워크가 끊겼습니다. 확인해주시기 바랍니다.';

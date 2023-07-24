@@ -44,7 +44,6 @@ public class CommonVo implements Serializable {
 	private String sendUrl;         // 리턴 url
 
 	//스케줄 비전
-	private String scheduleType;	//스케줄 타입
 	private String modReason;		//사유
 	private BigInteger returnIdx;	//반환고유키
 
@@ -152,12 +151,6 @@ public class CommonVo implements Serializable {
 	}
 	public void setReturnIdx(BigInteger returnIdx) {
 		this.returnIdx = returnIdx;
-	}
-	public String getScheduleType() {
-		return scheduleType;
-	}
-	public void setScheduleType(String scheduleType) {
-		this.scheduleType = scheduleType;
 	}
 	public String getModReason() {
 		return modReason;

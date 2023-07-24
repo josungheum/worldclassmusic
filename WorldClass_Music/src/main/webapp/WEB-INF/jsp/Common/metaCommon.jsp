@@ -103,6 +103,6 @@
 <!-- script type="text/javascript" src="<c:url value='/Content/site/SH/ssgfLayerTemplate.js'/>"></script>
 <script type="text/javascript" src="<c:url value='/Content/site/SH/ssgfTemplate.js'/>"></script-->
 <script type="text/javascript" src="<c:url value='/Content/site/SH/ImageList.js'/>"></script>
-
+<script type="text/javascript" src="<c:url value='/Content/site/tablednd/tablednd.js'/>"></script>
 
 

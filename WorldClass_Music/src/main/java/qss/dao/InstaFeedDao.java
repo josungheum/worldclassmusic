@@ -24,7 +24,19 @@ public class InstaFeedDao extends EgovAbstractMapper {
 	}
 
 	public int UpdateData(UploadVo uploadVo) throws Exception {
-		return update(uploadVo.getCaseString(), uploadVo);
+		if(uploadVo.getCaseString().equals("InstaFeed_SortUpdate")) {
+			int cnt = 0;
+			List<UploadVo> list = uploadVo.getList();
+			for(int i=0; i<list.size(); i++) {
+				UploadVo temp = list.get(i);
+				temp.setModUser(uploadVo.getModUser());
+				cnt = update("InstaFeed_SortUpdate", temp);
+			}
+			
+			return cnt;
+		}else {
+			return update(uploadVo.getCaseString(), uploadVo);
+		}
 	}
 
 	public int DeleteDataByObjectParam(UploadVo uploadVo) {

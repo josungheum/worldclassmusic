@@ -5,8 +5,6 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<input type="hidden" id="contDomainIdx">
-<input type="hidden" id="contGroupIdx">
 <div class="box box-widget">
 	<div class="box-header">
 		<div class="user-block under-line">Main Feed 컨텐츠 목록</div>
@@ -29,7 +27,7 @@
 		</div>
 		<div class="box-footer" id="inputBtn">
 			<div class="pull-right">
-				<button type="button" class="btn btn-primary2" data-toggle="modal" onclick="ContentFileAdd();" id="contAddBtn"><i class="glyphicon mr-5"></i>순서 변경</button>
+				<button type="button" class="btn btn-primary2" data-toggle="modal" onclick="orderChange();" id="contAddBtn"><i class="glyphicon mr-5"></i>순서 변경</button>
 				<button type="button" class="btn btn-primary2" data-toggle="modal" onclick="ContentFileAdd();" id="contAddBtn"><i class="glyphicon glyphicon-plus mr-5"></i>등록</button>
 				<button type="button" class="btn btn-delete" onclick="Delete()" id="contDelBtn"><i class="glyphicon glyphicon-trash mr-5"></i>삭제</button>
 			</div>
@@ -40,11 +38,13 @@
 	$(document).ready(function () {
 		MainFeedList();
 	});
-
-	function MainFeedList(domainIdx, groupIdx){
+	
+	var mTable = "";
+	function MainFeedList(){
+		if(mTable != "")
+			mTable.destroy();
+		
 		var optObject = {};
-		var domainIdx = $('#contDomainIdx').val();
-		var groupIdx = $('#contGroupIdx').val();
 
 		optObject.id = "#mainFeedTable";
 		optObject.url = '<c:url value="/MainFeed/MainFeedList"/>';
@@ -164,7 +164,12 @@
 		$.sessionCheck();
         $.modalCommon.loadDataView('컨텐츠 등록', '<c:url value="/MainFeed/Form"/>' , {contType: val});
 	}
-
+	
+	function orderChange(val) {
+		$.sessionCheck();
+        $.modalCommon.loadDataView('순서 변경', '<c:url value="/MainFeed/SortForm"/>' , {contType: val});
+	}
+	
 
 	function Delete() {
 		$.sessionCheck();

@@ -8,8 +8,8 @@ import egovframework.rte.psl.dataaccess.EgovAbstractMapper;
 import qss.vo.CommonVo;
 import qss.vo.UploadVo;
 
-@Repository("mainFeedDao")
-public class MainFeedDao extends EgovAbstractMapper {
+@Repository("mainVideoDao")
+public class MainVideoDao extends EgovAbstractMapper {
 
 	public List<?> SelectListData(UploadVo uploadVo) {
 		return selectList(uploadVo.getCaseString(), uploadVo);
@@ -24,13 +24,13 @@ public class MainFeedDao extends EgovAbstractMapper {
 	}
 
 	public int UpdateData(UploadVo uploadVo) throws Exception {
-		if(uploadVo.getCaseString().equals("MainFeed_SortUpdate")) {
+		if(uploadVo.getCaseString().equals("MainVideo_SortUpdate")) {
 			int cnt = 0;
 			List<UploadVo> list = uploadVo.getList();
 			for(int i=0; i<list.size(); i++) {
 				UploadVo temp = list.get(i);
 				temp.setModUser(uploadVo.getModUser());
-				cnt = update("MainFeed_SortUpdate", temp);
+				cnt = update("MainVideo_SortUpdate", temp);
 			}
 			
 			return cnt;

@@ -8,6 +8,17 @@
 <link type="text/css" rel="stylesheet" href="<c:url value='/Content/Dropzone/basic.min.css'/>" />
 <link type="text/css" rel="stylesheet" href="<c:url value='/Content/Dropzone/dropzone.min.css'/>" />
 <script type="text/javascript" src="<c:url value='/Content/Dropzone/dropzone.js'/>"></script>
+<style>
+.instaurl{
+	border: 2px solid rgba(0,0,0,0.3);
+    background: white;
+    padding: 4px 10px;
+    width:100%;
+}
+.inputDiv{
+	display:none;
+}
+</style>
 <form:form commandName="UploadVo" name="fileUpload" id="fileUpload" method="post" class="dropzone">
 <form:hidden path="SaveFolder"/>
 <form:hidden path="Extens"/>
@@ -15,8 +26,23 @@
 		<h5>여기에 파일을 올리거나 업로드하려면 클릭하십시오.</h5>
 	</div>
 </form:form>
+<div class="inputDiv">
+	<h5>insta url</h5>
+	<input type="text" id="instaUrl" class="instaurl">
+</div>
 <script type="text/javaScript">
 	$.FileUpload.StartUpload = function () {
+		var name 		= $('#SaveFolder').val();
+		var instaUrl 	= $('#instaUrl').val().trim();
+		if (name == 'InstaFeed') {
+			if(instaUrl.length == 0){
+				$.modalCommon.alertView('인스타 URL을 입력해주세요.');
+				return false;
+			}
+		}
+		
+		$.FileUpload.dz.options.params.instaUrl = instaUrl;
+		
 		$.FileUpload.Data = [];
 		$.FileUpload.dz.processQueue();
 	}
@@ -33,12 +59,23 @@
 		if (name == 'MainFeed') {
 			max = 1;
 			acceptedFiles = '.jpg,.jpeg,.png,.avi,.wmv,.mpeg,.mp4,.JPG,.JPEG,.PNG,.AVI,.WMV,.MPEG,.MP4';
-			contType= 'M'
+			contType= 'M';
+		}
+		else if (name == 'InstaFeed') {
+			max = 1;
+			acceptedFiles = '.jpg,.jpeg,.png,.avi,.wmv,.mpeg,.mp4,.JPG,.JPEG,.PNG,.AVI,.WMV,.MPEG,.MP4';
+			contType= 'I';
+			$('.inputDiv').css('display','block');
+		}
+		else if (name == 'MainVideo') {
+			max = 1;
+			acceptedFiles = '.avi,.wmv,.mpeg,.mp4,.AVI,.WMV,.MPEG,.MP4';
+			contType= 'V';
 		}
 		else if (name == 'CommonContent'){
 			max = 10;
 			acceptedFiles = '.jpg,.jpeg,.png,.avi,.wmv,.mpeg,.mp4,.JPG,.JPEG,.PNG,.AVI,.WMV,.MPEG,.MP4';
-			contType= 'C'
+			contType= 'C';
 			groupIdx= $('#contGroupIdx').val();
 
 			$('.modal-dialog .btn').removeAttr('disabled');
@@ -59,7 +96,7 @@
 			autoProcessQueue: false,
 			dictDefaultMessage: '파일을 드래그 하거나 이곳을 클릭하세요',
 			paramName: 'uploadFile',
-			params: {contType: contType, groupIdx: groupIdx},
+			params: {contType: contType, instaUrl: instaUrl},
 			maxFilesize: 5000, // MB
 			maxFiles: max,
 			acceptedFiles: acceptedFiles,

@@ -51,7 +51,7 @@ public class UploadImpl extends EgovAbstractServiceImpl  implements Qss {
 	@Override
 	public int UpdateData(CommonVo commonVo) throws Exception {
 		// TODO Auto-generated method stub
-		return 0;
+		return uploadDao.UpdateData((UploadVo)commonVo);
 	}
 
 	@Override

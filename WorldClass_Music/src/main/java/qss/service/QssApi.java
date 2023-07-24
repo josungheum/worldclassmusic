@@ -5,9 +5,6 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import qss.vo.log.KioskLogH;
-import qss.vo.log.PlayLogH;
-
 @Service
 public interface QssApi {
     public int CheckDeviceCode(String dvCode) throws Exception;
@@ -19,10 +16,6 @@ public interface QssApi {
     public Map<String, Object> GetPlayerInfo(String dvCode);
 
     public List<Map<String, Object>> FloorList(String dvCode);
-
-    public int insertDeviceUserActionLog(List<KioskLogH> actionLogList);
-
-    public int insertContentPlayLog(List<PlayLogH> playLogList);
     
     public String GetMaxUpdateDt();
 

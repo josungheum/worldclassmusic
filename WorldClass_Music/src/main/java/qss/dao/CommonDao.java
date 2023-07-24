@@ -79,7 +79,6 @@ public class CommonDao extends EgovAbstractMapper {
 		dataMap.put("brandIdx", commonVo.getBrandIdx());
 		dataMap.put("francIdx", commonVo.getFrancIdx());
 		dataMap.put("modUser", commonVo.getRegUser());
-		dataMap.put("scheduleType", commonVo.getScheduleType());
 		dataMap.put("modReason", commonVo.getModReason());
 		int cnt = update("Common_UpdateScheduleVersion", dataMap);
 		return cnt;

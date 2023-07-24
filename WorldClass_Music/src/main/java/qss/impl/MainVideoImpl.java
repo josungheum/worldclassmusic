@@ -9,31 +9,31 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 import egovframework.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import qss.dao.UserActionLogDao;
+import qss.dao.MainFeedDao;
+import qss.dao.MainVideoDao;
 import qss.service.Qss;
 import qss.vo.CommonVo;
+import qss.vo.UploadVo;
 
-@Service("userActionLogService")
-public class UserActionLogImpl extends EgovAbstractServiceImpl implements Qss {
-	@Resource(name="userActionLogDao")
-	private UserActionLogDao userActionLogDao;
+@Service("mainVideoService")
+public class MainVideoImpl extends EgovAbstractServiceImpl implements Qss {
+	@Resource(name="mainVideoDao")
+	private MainVideoDao mainVideoDao;
 
 	@Override
 	public List<?> SelectListData(CommonVo commonVo) throws Exception {
 		// TODO Auto-generated method stub
-		return userActionLogDao.SelectListData(commonVo);
+		return mainVideoDao.SelectListData((UploadVo)commonVo);
 	}
 
 	@Override
 	public int DataByCnt(CommonVo commonVo) {
-		// TODO Auto-generated method stub
-		return 0;
+		return mainVideoDao.DataByCnt(commonVo);
 	}
 
 	@Override
 	public CommonVo SelectData(CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
-		return userActionLogDao.SelectData(commonVo);
+		return mainVideoDao.SelectData((UploadVo)commonVo);
 	}
 
 	@Override
@@ -44,27 +44,23 @@ public class UserActionLogImpl extends EgovAbstractServiceImpl implements Qss {
 
 	@Override
 	public int InsertData(CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+		return mainVideoDao.InsertData((UploadVo)commonVo);
 	}
 
 	@Override
 	public int UpdateData(CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+		return mainVideoDao.UpdateData((UploadVo)commonVo);
 	}
 
 	@Override
 	public int DeleteDataByObjectParam(Map<String, Object> ID, CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+		return mainVideoDao.DeleteDataByObjectParam((UploadVo)commonVo);
 	}
 
 	@Override
 	public String SelectByReturnString(CommonVo commonVo) throws Exception {
-		// TODO Auto-generated method stub
 		return null;
-	} 
+	}
 	
 	@Override
 	public HashMap SelectDataMap(CommonVo commonVo) throws Exception {

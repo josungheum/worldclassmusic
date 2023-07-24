@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import qss.impl.CommonImpl;
 import qss.impl.MainFeedImpl;
+import qss.impl.MainVideoImpl;
 import qss.service.Qss;
 import qss.vo.AjaxResultVO;
 import qss.vo.UploadVo;
@@ -29,27 +30,27 @@ import qss.vo.UploadVo;
  * 
  */
 @Controller
-public class MainFeedController {
-	@Resource(name="mainFeedService")
-	Qss mainFeedService = new MainFeedImpl();
+public class MainVideoController {
+	@Resource(name="mainVideoService")
+	Qss mainVideoService = new MainVideoImpl();
 
 	@Resource(name="commonService")
 	Qss commonService = new CommonImpl();
 
-	private static final Log logger = LogFactory.getLog(MainFeedController.class);
+	private static final Log logger = LogFactory.getLog(MainVideoController.class);
 
-	@RequestMapping(value="MainFeed/Main")
+	@RequestMapping(value="MainVideo/Main")
     public String brandMain(@ModelAttribute("UploadVo")UploadVo uploadVo, HttpSession session, ModelMap model, HttpServletRequest request) throws Exception
 	{
 		if ((String)session.getAttribute("id") != null) {
-			return "/MainFeed/Main";
+			return "/MainVideo/Main";
 		} else {
 			return "redirect:/Logout";
 		}
     }
 	
 	@SuppressWarnings("unchecked")
-	@RequestMapping(value = "MainFeed/MainFeedList")
+	@RequestMapping(value = "MainVideo/MainVideoList")
 	@ResponseBody
 	public AjaxResultVO ContentList(UploadVo uploadVo, HttpSession session) throws Exception {
 		AjaxResultVO result = new AjaxResultVO();
@@ -58,12 +59,12 @@ public class MainFeedController {
 		uploadVo.setDomainIdx((String)session.getAttribute("domainIdx"));
 
 		try {
-			uploadVo.setCaseString("MainFeed_MainFeedList");
-			List<UploadVo> list = (List<UploadVo>) mainFeedService.SelectListData(uploadVo);
+			uploadVo.setCaseString("MainVideo_MainVideoList");
+			List<UploadVo> list = (List<UploadVo>) mainVideoService.SelectListData(uploadVo);
 			result.setData(list);
 
-			uploadVo.setCaseString("MainFeed_MainFeedListCnt");
-			result.setiTotalDisplayRecords(mainFeedService.DataByCnt(uploadVo));
+			uploadVo.setCaseString("MainVideo_MainVideoListCnt");
+			result.setiTotalDisplayRecords(mainVideoService.DataByCnt(uploadVo));
 
 			result.setData(list);
 
@@ -78,30 +79,30 @@ public class MainFeedController {
 		return result;
 	}
 
-	@RequestMapping(value = "MainFeed/Form")
+	@RequestMapping(value = "MainVideo/Form")
 	public String UrlForm(@ModelAttribute("UploadVo") UploadVo uploadVo, ModelMap model, HttpSession session) throws Exception
 	{
 		if ((String) session.getAttribute("id") != null) {
 			model.addAttribute(uploadVo);
-			return "/MainFeed/Form";
+			return "/MainVideo/Form";
 		} else {
 			return "/Logout";
 		}
 	}
 	
-	@RequestMapping(value = "MainFeed/Create")
+	@RequestMapping(value = "MainVideo/Create")
 	@ResponseBody
 	public AjaxResultVO CreateUrl(UploadVo uploadVo, HttpSession session) throws Exception {
 		AjaxResultVO result = new AjaxResultVO();
 		Map<String, Object> messages = new HashMap<String, Object>();
 
 		try {
-			uploadVo.setCaseString("MainFeed_Create");
+			uploadVo.setCaseString("MainVideo_Create");
 			uploadVo.setId((String)session.getAttribute("id"));
 			uploadVo.setRegUser((String)session.getAttribute("id"));
 			uploadVo.setModUser((String)session.getAttribute("id"));
 
-			int resultCode = mainFeedService.InsertData(uploadVo);
+			int resultCode = mainVideoService.InsertData(uploadVo);
 
 			if (resultCode > 0)
 			{
@@ -124,7 +125,7 @@ public class MainFeedController {
 	}
 
 
-	@RequestMapping("MainFeed/Delete")
+	@RequestMapping("MainVideo/Delete")
 	@ResponseBody
 	public AjaxResultVO Delete(UploadVo uploadVo, HttpSession session) throws Exception
 	{	
@@ -132,9 +133,9 @@ public class MainFeedController {
 		Map<String, Object> messages = new HashMap<String, Object>();
 		
 		try {
-			uploadVo.setCaseString("MainFeed_Delete");
+			uploadVo.setCaseString("MainVideo_Delete");
 			uploadVo.setModUser((String)session.getAttribute("id"));
-			int cnt = mainFeedService.DeleteDataByObjectParam(null, uploadVo);
+			int cnt = mainVideoService.DeleteDataByObjectParam(null, uploadVo);
 			
 			if (0 == cnt) {
 				result.setResultCode(1);
@@ -155,7 +156,7 @@ public class MainFeedController {
 		return result;
 	}
 	
-	@RequestMapping("MainFeed/ActiveYn")
+	@RequestMapping("MainVideo/ActiveYn")
 	@ResponseBody
 	public AjaxResultVO ActiveYn(UploadVo uploadVo, HttpSession session) throws Exception
 	{	
@@ -163,9 +164,9 @@ public class MainFeedController {
 		Map<String, Object> messages = new HashMap<String, Object>();
 		
 		try {
-			uploadVo.setCaseString("MainFeed_ActiveYn");
+			uploadVo.setCaseString("MainVideo_ActiveYn");
 			uploadVo.setModUser((String)session.getAttribute("id"));
-			int cnt = mainFeedService.UpdateData(uploadVo);
+			int cnt = mainVideoService.UpdateData(uploadVo);
 			
 			if (0 == cnt) {
 				result.setResultCode(1);
@@ -186,18 +187,18 @@ public class MainFeedController {
 		return result;
 	}
 	
-	@RequestMapping(value = "MainFeed/SortForm")
+	@RequestMapping(value = "MainVideo/SortForm")
 	public String SortForm(@ModelAttribute("UploadVo") UploadVo uploadVo, ModelMap model, HttpSession session) throws Exception
 	{
 		if ((String) session.getAttribute("id") != null) {
 			model.addAttribute(uploadVo);
-			return "/MainFeed/SortForm";
+			return "/MainVideo/SortForm";
 		} else {
 			return "/Logout";
 		}
 	}
 	
-	@RequestMapping(value = "MainFeed/SortUpdate")
+	@RequestMapping(value = "MainVideo/SortUpdate")
 	@ResponseBody
 	public AjaxResultVO SortUpdate(@RequestBody UploadVo uploadVo, HttpSession session) throws Exception
 	{	
@@ -205,9 +206,9 @@ public class MainFeedController {
 		Map<String, Object> messages = new HashMap<String, Object>();
 		
 		try {
-			uploadVo.setCaseString("MainFeed_SortUpdate");
+			uploadVo.setCaseString("MainVideo_SortUpdate");
 			uploadVo.setModUser((String)session.getAttribute("id"));
-			int cnt = mainFeedService.UpdateData(uploadVo);
+			int cnt = mainVideoService.UpdateData(uploadVo);
 			
 			if (0 == cnt) {
 				result.setResultCode(1);

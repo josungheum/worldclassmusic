@@ -1,6 +1,7 @@
 package qss.vo;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,6 +44,11 @@ public class UploadVo extends CommonVo {
 	private String regDt;
 	
 	private String mainFeedIdx;
+	private String instaFeedIdx;
+	private String mainVideoIdx;
+	private String instaUrl;
+	
+	private List<UploadVo> list;
 	
 	public String getFileContentIdx() {
 		return fileContentIdx;
@@ -264,6 +270,30 @@ public class UploadVo extends CommonVo {
 	}
 	public void setMainFeedIdx(String mainFeedIdx) {
 		this.mainFeedIdx = mainFeedIdx;
+	}
+	public String getMainVideoIdx() {
+		return mainVideoIdx;
+	}
+	public void setMainVideoIdx(String mainVideoIdx) {
+		this.mainVideoIdx = mainVideoIdx;
+	}
+	public String getInstaUrl() {
+		return instaUrl;
+	}
+	public void setInstaUrl(String instaUrl) {
+		this.instaUrl = instaUrl;
+	}
+	public List<UploadVo> getList() {
+		return list;
+	}
+	public void setList(List<UploadVo> list) {
+		this.list = list;
+	}
+	public String getInstaFeedIdx() {
+		return instaFeedIdx;
+	}
+	public void setInstaFeedIdx(String instaFeedIdx) {
+		this.instaFeedIdx = instaFeedIdx;
 	}
 
 }
